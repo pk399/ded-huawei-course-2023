@@ -5,7 +5,7 @@
 size_t TableSize(size_t team_count)
 {
     size_t n = team_count;
-    return ((1+n)*n)/2;
+    return ((1+n) * n) / 2;
 }
 
 void Size_tSwap(size_t *n1, size_t *n2)
