@@ -15,7 +15,7 @@ void Size_tSwap(size_t *n1, size_t *n2)
     *n1 -= *n2;
 }
 
-int TableGet(int table[], size_t team1, size_t team2)
+int TableGet(const int table[], size_t team1, size_t team2)
 {
     assert(table != NULL);
     assert(team1 != team2);
@@ -29,7 +29,7 @@ int TableGet(int table[], size_t team1, size_t team2)
 
 }
 
-void PrintTable(int table[], size_t team_count)
+void PrintTable(const int table[], size_t team_count)
 {
     assert(team_count > 1);
     assert(table != NULL);
