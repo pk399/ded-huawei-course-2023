@@ -8,7 +8,7 @@ size_t TrArrSize(size_t indexes)
     return ((1+n) * n) / 2;
 }
 
-void Size_tSwap(size_t *n1, size_t *n2)
+void SwapSize_t(size_t *n1, size_t *n2)
 {
     *n1 += *n2;
     *n2 = *n1 - *n2;
