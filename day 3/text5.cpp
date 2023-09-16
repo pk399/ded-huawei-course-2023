@@ -82,6 +82,7 @@ int ReadFromFile(text5* txt, const char* path)
     putchar('\n');*/
 
 
+    #warning at least, don't hardcode
     const size_t MAX_LINES = 60015;
     txt->lines = (char**) calloc(MAX_LINES, sizeof(char*));
     if (!txt->lines) return -1;
@@ -150,12 +151,12 @@ void Print(const text5* txt)
 }
 
 
-void* VoidIndex(const void* arr, size_t el_size, size_t index)
+inline void* VoidIndex(const void* arr, size_t el_size, size_t index)
 {
     assert(arr);
     assert(el_size);
 
-    return (void*) ((size_t) arr + index*el_size);
+    return (void*) ((char*) arr + index*el_size);
 }
 
 
@@ -205,6 +206,71 @@ void BubbleSort(void* arr, size_t el_size, size_t len,
 }
 
 
+size_t _QPartition(void* arr, size_t el_size,
+                   ORDER (*cmp)(const void*, const void*),
+                   size_t left, size_t right)
+{
+    assert(arr);
+    assert(el_size);
+    assert(cmp);
+    assert(left < right);
+    assert(right - left + 1 > 1);
+
+    void* mid_el = calloc(1, el_size);
+    assert(mid_el);
+
+    //printf("L: %zd R: %zd Mid: %zd\n", left, right, (right + left)/2);
+
+    memcpy(mid_el, VoidIndex(arr, el_size, (right + left)/2), el_size);
+
+
+    while (left < right)
+    {
+        while (left < right
+               && memcmp(VoidIndex(arr, el_size, left), mid_el, el_size)
+               && cmp(VoidIndex(arr, el_size, left), mid_el) == OK) left++;
+        while (left < right
+               && memcmp(VoidIndex(arr, el_size, right), mid_el, el_size)
+               && cmp(mid_el, VoidIndex(arr, el_size, right)) == OK) right--;
+
+        // while (left < right && cmp(mid_el, VoidIndex(arr, el_size, left)) != OK) left++;
+        //while (left < right && cmp(mid_el, VoidIndex(arr, el_size, right)) != SWAP) right--;
+        //printf("%d %d\n", left, right);
+        VoidSwap(arr, el_size, left, right);
+
+    }
+
+
+    free(mid_el);
+
+    return left;
+}
+
+
+void _QSort(void* arr, size_t el_size,
+            ORDER (*cmp)(const void*, const void*),
+            size_t left, size_t right)
+{
+    size_t mid = _QPartition(arr, el_size, cmp, left, right);
+    //printf("Partitioned L: %zd R: %zd - got mid %zd\n", left, right, mid);
+
+    if (mid - left + 1 > 1)
+        //(printf("%zd%zd: Calling 1\n", left, right),
+        _QSort(arr, el_size, cmp, left, mid);//);
+
+    if (right - (mid + 1) + 1 > 1)
+        //(printf("%zd%zd: Calling 2\n", left, right),
+        _QSort(arr, el_size, cmp, mid+1, right);//);
+}
+
+
+void QuickSort(void* arr, size_t el_size, size_t len,
+                ORDER (*cmp)(const void*, const void*))
+{
+    _QSort(arr, el_size, cmp, 0, len-1);
+}
+
+
 bool Myisalpha(char a)
 {
     //a:97 z:122 A:65 Z:90
@@ -237,7 +303,7 @@ ORDER StrCompL2R(const void* a_void, const void* b_void)
 
 void SortL2R(text5* txt)
 {
-    BubbleSort(txt->lines, sizeof(char*), txt->nLines, &StrCompL2R);
+    QuickSort(txt->lines, sizeof(char*), txt->nLines, &StrCompL2R);
 }
 
 
@@ -270,7 +336,7 @@ ORDER StrCompR2L(const void* a_void, const void* b_void)
 
 void SortR2L(text5* txt)
 {
-    BubbleSort(txt->lines, sizeof(char*), txt->nLines, &StrCompR2L);
+    QuickSort(txt->lines, sizeof(char*), txt->nLines, &StrCompR2L);
 }
 
 
@@ -285,10 +351,10 @@ ORDER s1mple_cmp(const void* a, const void* b)
 
 int main(void)
 {
-    /*long long unsigned l[5] = {133333333337, 420, 3, 1, 2};
+    long long unsigned l[5] = {133333333337, 420, 3, 1, 2};
     printf("%llu %llu %llu %llu %llu\n", l[0], l[1], l[2], l[3], l[4]);
-    BubbleSort(l, sizeof(l[0]), 5, &s1mple_cmp);
-    printf("%llu %llu %llu %llu %llu\n", l[0], l[1], l[2], l[3], l[4]);*/
+    QuickSort(l, sizeof(l[0]), 5, &s1mple_cmp);
+    printf("%llu %llu %llu %llu %llu\n", l[0], l[1], l[2], l[3], l[4]);
 
 
     const char* PUSHKIN = "evgenij_onegin_en.txt";
@@ -307,7 +373,7 @@ int main(void)
 
     printf("\n======   SORT R2L   ======\n");
     SortR2L(&evgenij_onegin);
-    PrintSampleAlpha(&evgenij_onegin, 30);
+    PrintSampleAlpha(&evgenij_onegin, 300);
 
     TextKiller(&evgenij_onegin);
 }
