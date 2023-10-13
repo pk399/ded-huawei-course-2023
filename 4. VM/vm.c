@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "func_stack.h"
-#include "implementation.h"
 #include "colors.h"
 #include "memory.h"
 #include "bytecode.h"
@@ -12,7 +11,6 @@
 struct _vm {
 	Stack* stack;
 	char registers[4];
-	unsigned ip;
 	Memory* code;
 };
 
@@ -43,14 +41,6 @@ int VMDump(VM* vm) {
 	
 	printf("\t");
 	StackDump(vm->stack);
-	
-	/*for (unsigned i = 0; i < vm->code->size; i++) {
-		if (i == vm->ip) {
-			printf(YELLOW("%hu"), (unsigned) vm->code->bytes[i]);
-		} else {
-			printf("%hu", (unsigned) vm->code->bytes[i]);
-		}
-	}*/
 	
 	printf("\t");
 	MemDump(vm->code);

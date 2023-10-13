@@ -25,9 +25,11 @@ printf("GON REALL\n");
 int MemDump(Memory* mem) {
 	printf(GREEN("Memory") "[" BLUE("%p") "] { ", mem);
 	
-	for (unsigned i = 0; i < mem->size && i < DUMP_LIMIT; i++) {
-		printf("%02X ", (unsigned) mem->bytes[i]);
-	}
+	for (unsigned i = 0; i < mem->size && i < DUMP_LIMIT; i++)
+		if (i == mem->p)
+			printf(YELLOW("%02X "), mem->bytes[i]);
+		else
+			printf("%02X ", mem->bytes[i]);
 	
 	printf("}\n");
 	
