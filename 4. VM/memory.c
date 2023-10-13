@@ -62,6 +62,9 @@ int MemRealloc(Memory* mem, unsigned new_size) {
 	
 	mem->bytes = (char*) realloc(mem->bytes, new_size);
 	
+	if (!mem->bytes)
+		return -1
+	
 	for (unsigned i = mem->size; i < new_size; i++)
 		mem->bytes[i] = 0;
 	
