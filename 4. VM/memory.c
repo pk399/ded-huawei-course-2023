@@ -74,13 +74,15 @@ int MemRealloc(Memory* mem, unsigned new_size) {
 }
 
 
-int MemRead(Memory* mem) {
+int MemRead(Memory* mem, char* byte) {
 	if (mem->p >= mem->size) {
 		printf("MemRead: Out of dounds\n");
 		return -1;
 	}
 	
-	return mem->bytes[mem->p++];
+	*byte = mem->bytes[mem->p++];
+	
+	return 0;
 }
 
 

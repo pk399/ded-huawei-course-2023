@@ -12,8 +12,10 @@ typedef struct _memory {
 Memory* MemCtor(unsigned size);
 int MemDump(Memory*);
 int MemDtor(Memory*);
+
 int MemRealloc(Memory*, unsigned new_size);
-int MemRead(Memory*);
+
+int MemRead(Memory*, char* byte);
 int MemWrite(Memory*, char byte);
 int MemSeek(Memory*, unsigned position);
 
