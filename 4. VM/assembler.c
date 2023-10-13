@@ -102,7 +102,7 @@ printf("123123");
 	if (!in_file)
 		return -printf("Failed to open input file (%s)\n", args[1]);
 		
-	Memory* code = MemCtor(4);
+	Memory* code = MemCtor(128);
 	assert(code); // SegFault ?! No, u just stupid
 	
 	ParseFile(code, in_file);
@@ -115,7 +115,8 @@ printf("123123");
 		out_file = fopen(args[2], "wt");
 	if (!out_file)
 		return -printf("Failed to open file for writing\n");
-		
+	
+	MemRealloc(code, code->p);
 	WriteBytecode(out_file, code);
 	
 	MemDtor(code);
