@@ -179,7 +179,7 @@ int VMStep(VM* vm) {
 				char val2 = 0;
 		 		if ( StackPop(vm->stack, &val1) ) return -1;
 		 		if ( StackPop(vm->stack, &val2) ) return -1;
-		 		if ( StackPush(vm->stack, val1 - val2) ) return -1;
+		 		if ( StackPush(vm->stack, val2 - val1) ) return -1;
 		 	}
 	 		break;
 		
@@ -199,7 +199,7 @@ int VMStep(VM* vm) {
 				char val2 = 0;
 		 		if ( StackPop(vm->stack, &val1) ) return -1;
 		 		if ( StackPop(vm->stack, &val2) ) return -1;
-		 		if ( StackPush(vm->stack, val1 / val2) ) return -1;
+		 		if ( StackPush(vm->stack, val2 / val1) ) return -1;
 		 	}
 	 		break;
 		
