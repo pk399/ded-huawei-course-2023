@@ -8,6 +8,7 @@ typedef char stack_t;
 Stack* StackCtor();
 int StackDump(Stack*);
 int StackDtor(Stack*);
+
 int StackPush(Stack*, stack_t value);
 int StackPop(Stack*, stack_t* value);
 
