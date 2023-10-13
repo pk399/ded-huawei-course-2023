@@ -11,7 +11,7 @@ Memory* MemCtor() {
 	printf("CALLOCED\n");
 	if (!new_mem) return NULL;
 printf("GON REALL\n");
-	MemRealloc(new_mem, size);
+	MemRealloc(new_mem, DEFAULT_SIZE);
 	printf("EXIT %p %pc\n", new_mem, new_mem->bytes);
 	if (!new_mem->bytes) {
 		free(new_mem);
