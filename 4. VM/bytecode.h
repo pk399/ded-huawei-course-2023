@@ -16,5 +16,6 @@ const unsigned VERSION = 13370000;
 
 int WriteBytecode(FILE*, Memory*);
 Memory* ReadBytecode(FILE*);
+int ReadBytecodeMem(Memory*, FILE*);
 
 #endif /* _CODE_H_ */
