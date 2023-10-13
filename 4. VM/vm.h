@@ -6,7 +6,7 @@
 typedef struct _vm VM;
 
 
-VM* VMCtor(unsigned mem_size);
+VM* VMCtor();
 int VMDump(VM*);
 int VMDtor(VM*);
 

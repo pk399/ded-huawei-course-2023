@@ -1,6 +1,7 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
 
+const unsigned DEFAULT_SIZE = 128;
 const unsigned DUMP_LIMIT = 20;
 
 typedef struct _memory {
@@ -9,7 +10,7 @@ typedef struct _memory {
 	unsigned p;
 } Memory;
 
-Memory* MemCtor(unsigned size);
+Memory* MemCtor();
 int MemDump(Memory*);
 int MemDtor(Memory*);
 

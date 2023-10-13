@@ -102,7 +102,7 @@ printf("123123");
 	if (!in_file)
 		return -printf("Failed to open input file (%s)\n", args[1]);
 		
-	Memory* code = MemCtor(128);
+	Memory* code = MemCtor();
 	assert(code); // SegFault ?! No, u just stupid
 	
 	ParseFile(code, in_file);

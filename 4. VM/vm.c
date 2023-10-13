@@ -17,12 +17,12 @@ struct _vm {
 };
 
 
-VM* VMCtor(unsigned mem_size) {
+VM* VMCtor() {
 	VM* vm = (VM*) calloc(1, sizeof(VM));
 	if (!vm) return vm;
 	
 	vm->stack = StackCtor();
-	vm->code = MemCtor(mem_size);
+	vm->code = MemCtor();
 	if (!vm->stack || !vm->code) return NULL;
 	
 	return vm;
@@ -218,7 +218,7 @@ int VMExec(VM* vm) {
 
 
 int main() {
-	VM* vm = VMCtor(10);
+	VM* vm = VMCtor();
 	
 	VMDump(vm);
 	

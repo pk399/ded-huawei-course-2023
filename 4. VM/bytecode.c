@@ -72,7 +72,7 @@ int ReadBytecodeMem(Memory* mem, FILE* file) {
 
 
 Memory* ReadBytecode(FILE* file) {
-	Memory* new_mem = MemCtor(333);
+	Memory* new_mem = MemCtor();
 	if (!new_mem) {
 		printf("__func__: Error constructing memory\n");
 		return NULL;

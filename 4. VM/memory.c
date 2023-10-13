@@ -5,7 +5,7 @@
 
 #include "memory.h"
 
-Memory* MemCtor(unsigned size) {
+Memory* MemCtor() {
 	printf("Ctorring that mem\n");
 	Memory* new_mem = (Memory*) calloc(1, sizeof(Memory));
 	printf("CALLOCED\n");
