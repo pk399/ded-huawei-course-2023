@@ -7,6 +7,7 @@
 
 #include "memory.h"
 
+
 typedef struct _memory {
 	void* bytes;
 	unsigned elem_size;
@@ -14,12 +15,14 @@ typedef struct _memory {
 	long int pointer;
 } Memory;
 
+
 const unsigned GROW_BY = 2;
 const unsigned SHRINK_WHEN = 3;
 const unsigned SHRINK_BY = 2;
 
 const unsigned DEFAULT_SIZE = 512;
 const unsigned DUMP_LIMIT = 20;
+
 
 Memory* MemCtor(unsigned elem_size) {
 	assert(elem_size);
@@ -257,11 +260,25 @@ int MemEOFPt(Memory* mem, unsigned pointer) {
 }
 
 
+void* MemGetBf(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+
+	return mem->bytes;
+}
+
+
 unsigned MemGetSz(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+
 	return mem->size;
 }
 
 
 unsigned MemGetPt(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+
 	return mem->pointer;
 }

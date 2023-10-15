@@ -23,6 +23,7 @@ int MemWritePt(Memory*, const void* elem, unsigned pointer);
 int MemEOFPt(Memory*, unsigned pointer);
 
 // Getters
+void* MemGetBf(Memory*);
 unsigned MemGetSz(Memory*);
 unsigned MemGetPt(Memory*);
 
