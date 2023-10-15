@@ -134,6 +134,27 @@ int MemRead(Memory* mem, void* elem) {
 }
 
 
+int MemReadPt(Memory* mem, void* elem, unsigned pointer) {
+	assert(mem);
+	assert(mem->elem_size);
+	assert(elem);
+	
+	if ( mem->size == 0 ) {
+		FATAL("Memory data is uninitiallized");
+		return -1;
+	}
+	
+	if ( MemEOFPt(mem, pointer) ) {
+		FATAL("Pointer outside of data");
+		return -1;
+	}
+	
+	memcpy(elem, ((char*) mem->bytes) + (pointer * mem->elem_size), mem->elem_size);
+		
+	return 0;
+}
+
+
 int MemWrite(Memory* mem, const void* elem) {
 	assert(mem);
 	assert(mem->elem_size);
@@ -154,12 +175,40 @@ int MemWrite(Memory* mem, const void* elem) {
 	return 0;
 }
 
+int MemWritePt(Memory* mem, const void* elem, unsigned pointer) {
+	assert(mem);
+	assert(mem->elem_size);
+	assert(elem);
+	
+	if ( mem->size == 0 ) {
+		FATAL("Memory data is uninitiallized");
+		return -1;
+	}
+	
+	if ( MemEOFPt(mem, pointer) ) {
+		FATAL("Pointer outside of data");
+		return -1;
+	}
+	
+	memcpy(((char*) mem->bytes) + (pointer * mem->elem_size), elem, mem->elem_size);
+		
+	return 0;
+}
+
 
 int MemEOF(Memory* mem) {
 	assert(mem);
 	assert(mem->elem_size);
 	
 	return (mem->pointer >= mem->size);
+}
+
+
+int MemEOFPt(Memory* mem, unsigned pointer) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	return (pointer >= mem->size);
 }
 
 
@@ -185,15 +234,10 @@ int MemSeek(Memory* mem, unsigned new_position) {
 		FATAL("Position out of rounds");
 		return -1;
 	}
-	
-	mem->pointer = new_position;	
+
+	mem->pointer = new_position;
 	
 	return 0;	
-}
-
-
-void* MemGetBf(Memory* mem) {
-	return mem->bytes;
 }
 
 
