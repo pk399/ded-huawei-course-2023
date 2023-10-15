@@ -21,7 +21,7 @@ const unsigned SHRINK_WHEN = 3;
 const unsigned SHRINK_BY = 2;
 
 const unsigned DEFAULT_SIZE = 512;
-const unsigned DUMP_LIMIT = 20;
+const unsigned DUMP_LIMIT = 10;
 
 
 Memory* MemCtor(unsigned elem_size) {
