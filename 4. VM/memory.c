@@ -60,7 +60,7 @@ int MemDump(Memory* mem) {
 	} else
 		printf( "Data[" BLUE("NULL") "]" );
 		
-	printf(", Element size = " YELLOW("%u") " }\n", mem->elem_size);
+	printf(", Size = " YELLOW("%u") ", Element size = " YELLOW("%u") " }\n", mem->size, mem->elem_size);
 	
 	return 0;
 }
