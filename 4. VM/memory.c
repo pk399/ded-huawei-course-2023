@@ -15,8 +15,8 @@ typedef struct _memory {
 } Memory;
 
 const unsigned GROW_BY = 2;
-// const unsigned SHRINK_WHEN = 3;
-// const unsigned SHRINK_BY = 2;
+const unsigned SHRINK_WHEN = 3;
+const unsigned SHRINK_BY = 2;
 
 const unsigned DEFAULT_SIZE = 512;
 const unsigned DUMP_LIMIT = 20;
@@ -230,12 +230,13 @@ int MemShift(Memory* mem, int position_delta) {
 
 
 int MemSeek(Memory* mem, unsigned new_position) {
-	if (new_position >= mem->size) {
-		FATAL("Position out of rounds");
-		return -1;
-	}
-
 	mem->pointer = new_position;
+	
+	while ( new_position >= mem->size )
+		MemResize(mem, mem->size * GROW_BY);
+	
+	while ( new_position < mem->size / SHRINK_WHEN)
+		MemResize(mem, mem->size / SHRINK_BY);
 	
 	return 0;	
 }
