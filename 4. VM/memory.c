@@ -1,72 +1,116 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
-#include "colors.h"
+#include "error.h"
 
 #include "memory.h"
 
-Memory* MemCtor() {
-	printf("Ctorring that mem\n");
-	Memory* new_mem = (Memory*) calloc(1, sizeof(Memory));
-	printf("CALLOCED\n");
-	if (!new_mem) return NULL;
-printf("GON REALL\n");
-	MemRealloc(new_mem, DEFAULT_SIZE);
-	printf("EXIT %p %pc\n", new_mem, new_mem->bytes);
-	if (!new_mem->bytes) {
-		free(new_mem);
+typedef struct _memory {
+	void* bytes;
+	unsigned elem_size;
+	unsigned size;
+	unsigned pointer;
+} Memory;
+
+const unsigned GROW_BY = 2;
+// const unsigned SHRINK_WHEN = 3;
+// const unsigned SHRINK_BY = 2;
+
+const unsigned DEFAULT_SIZE = 512;
+const unsigned DUMP_LIMIT = 20;
+
+Memory* MemCtor(unsigned elem_size) {
+	assert(elem_size);
+
+	Memory* mem = (Memory*) calloc(1, sizeof(Memory));
+	if (mem == NULL) {
+		FATAL("Calloc returned NULL");
 		return NULL;
 	}
-	printf("%p", new_mem);
-	return new_mem;
+	
+	mem->elem_size = elem_size;
+	mem->size = 0;
+	mem->pointer = 0;
+	
+	return mem;
 }
 
 
 int MemDump(Memory* mem) {
-	printf(GREEN("Memory") "[" BLUE("%p") "] { ", mem);
+	assert(mem);
+	assert(mem->elem_size);
+
+	printf(GREEN("Memory") "[" BLUE("%p") "] ", mem);
 	
-	for (unsigned i = 0; i < mem->size && i < DUMP_LIMIT; i++)
-		if (i == mem->p)
-			printf(YELLOW("%02X "), mem->bytes[i]);
-		else
-			printf("%02X ", mem->bytes[i]);
+	unsigned offset = 0;
+	if (mem->pointer > DUMP_LIMIT/2)
+		offset = mem->pointer - DUMP_LIMIT/2;
 	
-	printf("}\n");
+	if (mem->bytes) {
+		printf("Data[" BLUE("%p") "] = { ", mem->bytes);
+		for (unsigned i = offset; i < mem->size && i < DUMP_LIMIT + offset; i++)
+			for (unsigned j = 0; j < mem->elem_size; j++)
+				if (i == mem->pointer)
+					printf(YELLOW("%02X "), ((char*) mem->bytes)[i * mem->elem_size + j]);
+				else
+					printf("%02X ", ((char*) mem->bytes)[i * mem->elem_size + j]);
+		printf("}, Pointer = " YELLOW("%u") "\n", mem->pointer);
+	} else
+		printf( "Data[" BLUE("NULL") "]\n" );
 	
 	return 0;
 }
 
 
 int MemDtor(Memory* mem) {
-	free(mem->bytes);
-	free(mem);
+	if (mem) {
+		if (mem->bytes)
+			free(mem->bytes);
+		free(mem);
+	}
 	
 	return 0;
 }
 
 
-int MemRealloc(Memory* mem, unsigned new_size) {
-	int non_zero = 0;	
-	
-	if (mem->bytes && new_size < mem->size)
-		for (unsigned i = new_size; i < mem->size; i++)
-			non_zero += mem->bytes[i];
-	
-	if (non_zero)
-		printf("MemRealloc: Warning new size is less than current size, and there is some non-zero elements\n");
+int MemResize(Memory* mem, unsigned new_size) {
+	assert(mem);
+	assert(mem->elem_size);
+
+	if (new_size == 0) {
+		if (mem->bytes)
+			free(mem->bytes);
+		return 0;
+	}
 		
-	if (mem->p >= new_size) {
-		printf("MemRealloc: Warning: pointer is greater than new size, shifting\n");
-		mem->p = new_size - 1;
+	if (mem->bytes && new_size < mem->size) {
+		int non_zero = 0;
+	
+		for (unsigned i = new_size; i < mem->size; i++)
+			for (unsigned j = 0; j < mem->elem_size; j++)
+				non_zero += ((char*) mem->bytes)[i * mem->elem_size + j];
+	
+		if (non_zero)
+			WARNING("New size is less than current size and there is some non-zero elements");
 	}
 	
-	mem->bytes = (char*) realloc(mem->bytes, new_size);
+	mem->bytes = realloc(mem->bytes, new_size*mem->elem_size);
 	
-	if (!mem->bytes)
+	if (!mem->bytes) {
+		FATAL("Realloc returned null");
 		return -1;
+	}
+	
+	if (mem->pointer >= new_size) {
+		WARNING("Pointer is greater than new size. Shifting");
+		mem->pointer = new_size - 1;
+	}
 	
 	for (unsigned i = mem->size; i < new_size; i++)
-		mem->bytes[i] = 0;
+		for (unsigned j = 0; j < mem->elem_size; j++)
+			((char*) mem->bytes)[i * mem->elem_size + j] = 0;
 	
 	mem->size = new_size;
 	
@@ -74,40 +118,90 @@ int MemRealloc(Memory* mem, unsigned new_size) {
 }
 
 
-int MemRead(Memory* mem, char* byte) {
-	if (mem->p >= mem->size) {
-		printf("MemRead: Out of dounds\n");
+int MemRead(Memory* mem, void* elem) {
+	assert(mem);
+	assert(mem->elem_size);
+	assert(elem);
+
+	if ( MemEOF(mem) ) {
+		FATAL("Out of dounds");
 		return -1;
 	}
 	
-	*byte = mem->bytes[mem->p++];
+	memcpy(elem, ((char*) mem->bytes) + (mem->pointer++ * mem->elem_size), mem->elem_size);
 	
 	return 0;
 }
 
 
-int MemWrite(Memory* mem, char byte) {
-printf("MEMRITE %p\n", mem);
-	if (mem->p >= mem->size) {
-		printf("MemWrite: Out of goungos\n");
+int MemWrite(Memory* mem, const void* elem) {
+	assert(mem);
+	assert(mem->elem_size);
+	assert(elem);
+	
+	if (mem->size == 0)
+		MemResize(mem, DEFAULT_SIZE);
+	
+	if ( MemEOF(mem) ) {
+		FATAL("Out of goungos");
 		return -1;
 	}
-	printf("MEMRITE\n");
 	
-	if (mem->p == mem->size - 1)
-		MemRealloc(mem, mem->size * 2);
+	memcpy(((char*) mem->bytes) + (mem->pointer * mem->elem_size), elem, mem->elem_size);
 	
-	return (mem->bytes[mem->p++] = byte);
+	RELAY( MemShift(mem, 1) );
+		
+	return 0;
 }
 
 
-int MemSeek(Memory* mem, unsigned position) {
-	if (position >= mem->size) {
-		printf("MemSeek: Position out of rounds");
+int MemEOF(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	return (mem->pointer >= mem->size);
+}
+
+
+int MemShift(Memory* mem, int position_delta) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	//printf("ptr + delta: %d\n", mem->pointer + position_delta);
+	if ((int) mem->pointer + position_delta < 0) {
+		FATAL("Shifting will result in a negative pointer");
 		return -1;
 	}
 	
-	mem->p = position;	
+	unsigned new_ptr = mem->pointer + position_delta;
+	
+	RELAY( MemSeek(mem, new_ptr) );
+	return 0;
+}
+
+
+int MemSeek(Memory* mem, unsigned new_position) {
+	if (new_position >= mem->size) {
+		FATAL("Position out of rounds");
+		return -1;
+	}
+	
+	mem->pointer = new_position;	
 	
 	return 0;	
+}
+
+
+void* MemGetBf(Memory* mem) {
+	return mem->bytes;
+}
+
+
+unsigned MemGetSz(Memory* mem) {
+	return mem->size;
+}
+
+
+unsigned MemGetPt(Memory* mem) {
+	return mem->pointer;
 }
