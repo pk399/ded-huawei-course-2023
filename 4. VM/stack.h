@@ -1,15 +1,13 @@
-#ifndef _FUNC_STACK_H_
-#define _FUNC_STACK_H_
+#ifndef _STACK_H_
+#define _STACK_H_
 
 typedef struct _stack Stack;
 
-typedef char stack_t;
-
-Stack* StackCtor();
+Stack* StackCtor(unsigned elem_size);
 int StackDump(Stack*);
 int StackDtor(Stack*);
 
-int StackPush(Stack*, stack_t value);
-int StackPop(Stack*, stack_t* value);
+int StackPush(Stack*, const void* value);
+int StackPop(Stack*, void* value);
 
-#endif /* _FUNC_STACK_H_ */
+#endif /* _STACK_H_ */

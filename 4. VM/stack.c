@@ -1,86 +1,78 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-#include "func_stack.h"
 #include "colors.h"
+#include "error.h"
+#include "memory.h"
 
+#include "stack.h"
 
-typedef struct _node {
-	stack_t value;
-	struct _node* next;
-} Node;
 
 struct _stack {
-	Node* head;
+	Memory* mem;
 };
 
 
-Stack* StackCtor() {
-	Stack* stack = (Stack*) calloc(1, sizeof(Stack));
-	stack->head = NULL;
+Stack* StackCtor(unsigned elem_size) {
+	Stack* stk = (Stack*) calloc(1, sizeof(Stack));
+	if (!stk) {
+		FATAL("Calloc returned NULL");
+		return NULL;
+	}
 	
-	return stack;
+	if ( !(stk->mem = MemCtor(elem_size)) ) {
+		FATAL("Error constructing memory");
+		free(stk);
+		return NULL;
+	}
+
+	return stk;
 }
 
 
-int StackPush(Stack* stk, stack_t value) {
-	Node* new_node = (Node*) malloc(sizeof(Node));
-	if (!new_node) return -1;
-	*new_node = (Node) {value, stk->head};
-	
-	stk->head = new_node;
-	
-	return 0;
-}
+int StackDump(Stack* stk) {
+	assert(stk);
+	assert(stk->mem);
 
-
-int StackPop(Stack* stk, stack_t* value) {
-	if (!stk->head) return -1;
-	*value = stk->head->value;
-	
-	Node* temp = stk->head;
-	stk->head = temp->next;
-	free(temp);
-	
-	return 0;
-}
-
-
-int _stack_dtor(Node* node) {
-	if (!node) return 0;
-	
-	int res1 = _stack_dtor(node->next);
-	if (res1) return res1;
-	
-	free(node);
+	printf(GREEN("Stack") "[" BLUE("%p") "] { ", stk);
+	MemDump(stk->mem);
+	printf("\b }\n");
 	
 	return 0;
 }
 
 
 int StackDtor(Stack* stk) {
-	int res = _stack_dtor(stk->head);
-	if (res) return res;
+	if (stk)
+		if (stk->mem)
+			RELAY( MemDtor(stk->mem) );
+		free(stk);
+		
+	return 0;
+}
+
+
+int StackPush(Stack* stk, const void* value) {
+	assert(stk);
+	assert(stk->mem);
 	
-	free(stk);
+	MemShift(stk->mem, 1);
+	RELAY( MemWrite(stk->mem, value) );
 	
 	return 0;
 }
 
 
-void _stack_dump(Node* node) {
-	if (!node) return;
+int StackPop(Stack* stk, void* value) {
+	assert(stk);
+	assert(stk->mem);
 	
-	printf("%hu ", node->value);
+	RELAY( MemEOF(stk->mem) );
 	
-	_stack_dump(node->next);
-}
-
-
-int StackDump(Stack* stk) {
-	printf(GREEN("Stack") "[" BLUE("%p") "] { ", stk);
-	_stack_dump(stk->head);
-	printf("}\n");
+	MemRead(stk->mem, value);
+	MemZero(stk->mem);
+	MemShift(stk->mem, -1);
 	
 	return 0;
 }
