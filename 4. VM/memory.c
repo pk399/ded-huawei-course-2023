@@ -130,7 +130,7 @@ int MemRead(Memory* mem, void* elem) {
 		return -1;
 	}
 	
-	memcpy(elem, ((char*) mem->bytes) + (mem->pointer++ * mem->elem_size), mem->elem_size);
+	memcpy(elem, ((char*) mem->bytes) + (mem->pointer * mem->elem_size), mem->elem_size);
 	
 	return 0;
 }
@@ -167,15 +167,18 @@ int MemShift(Memory* mem, int position_delta) {
 	assert(mem);
 	assert(mem->elem_size);
 	
-	mem->pointer = mem->pointer + position_delta;
-	
-	if (position_delta > 0)
-		while ( mem->pointer >= mem->size )
-			MemResize(mem, mem->size * GROW_BY);
-	
-	if (position_delta < 0)
-		while ( mem->pointer < mem->size / SHRINK_WHEN)
-			MemResize(mem, mem->size / SHRINK_BY);	
+	if (mem->size != 0) {
+		mem->pointer += position_delta;
+		
+		if (position_delta > 0)
+			while ( mem->pointer >= mem->size )
+				MemResize(mem, mem->size * GROW_BY);
+		
+		if (position_delta < 0)
+			while ( mem->pointer < mem->size / SHRINK_WHEN
+					&& mem->size >= DEFAULT_SIZE*SHRINK_BY)
+				MemResize(mem, mem->size / SHRINK_BY);
+	}
 			
 	return 0;
 }
@@ -183,6 +186,22 @@ int MemShift(Memory* mem, int position_delta) {
 
 int MemSeek(Memory* mem, long int new_position) {
 	mem->pointer = new_position;
+	
+	return 0;
+}
+
+
+int MemZero(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	if ( MemEOF(mem) ) {
+		FATAL("Pointer outside of memory");
+		return -1;
+	}
+	
+	for (unsigned j = 0; j < mem->elem_size; j++)
+		((char*) mem->bytes)[mem->pointer * mem->elem_size + j] = 0;
 	
 	return 0;
 }

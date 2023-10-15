@@ -15,6 +15,7 @@ int MemWrite(Memory*, const void* elem);
 int MemEOF(Memory*);
 int MemShift(Memory*, int position_delta);
 int MemSeek(Memory*, unsigned new_position);
+int MemZero(Memory*);
 
 // Manipulating manually
 int MemReadPt(Memory*, void* elem, unsigned pointer);
