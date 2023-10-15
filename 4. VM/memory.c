@@ -11,7 +11,7 @@ typedef struct _memory {
 	void* bytes;
 	unsigned elem_size;
 	unsigned size;
-	unsigned pointer;
+	long int pointer;
 } Memory;
 
 const unsigned GROW_BY = 2;
@@ -56,7 +56,7 @@ int MemDump(Memory* mem) {
 					printf(YELLOW("%02X "), ((char*) mem->bytes)[i * mem->elem_size + j]);
 				else
 					printf("%02X ", ((char*) mem->bytes)[i * mem->elem_size + j]);
-		printf("}, Pointer = " YELLOW("%u"), mem->pointer);
+		printf("}, Pointer = " YELLOW("%ld"), mem->pointer);
 	} else
 		printf( "Data[" BLUE("NULL") "]" );
 		
@@ -136,6 +136,33 @@ int MemRead(Memory* mem, void* elem) {
 }
 
 
+int MemWrite(Memory* mem, const void* elem) {
+	assert(mem);
+	assert(mem->elem_size);
+	assert(elem);
+	
+	if (mem->size == 0)
+		MemResize(mem, DEFAULT_SIZE);
+	
+	if ( MemEOF(mem) ) {
+		FATAL("Out of goungos");
+		return -1;
+	}
+	
+	memcpy(((char*) mem->bytes) + (mem->pointer * mem->elem_size), elem, mem->elem_size);
+		
+	return 0;
+}
+
+
+int MemEOF(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	return (mem->pointer >= mem->size);
+}
+
+
 int MemReadPt(Memory* mem, void* elem, unsigned pointer) {
 	assert(mem);
 	assert(mem->elem_size);
@@ -156,26 +183,6 @@ int MemReadPt(Memory* mem, void* elem, unsigned pointer) {
 	return 0;
 }
 
-
-int MemWrite(Memory* mem, const void* elem) {
-	assert(mem);
-	assert(mem->elem_size);
-	assert(elem);
-	
-	if (mem->size == 0)
-		MemResize(mem, DEFAULT_SIZE);
-	
-	if ( MemEOF(mem) ) {
-		FATAL("Out of goungos");
-		return -1;
-	}
-	
-	memcpy(((char*) mem->bytes) + (mem->pointer * mem->elem_size), elem, mem->elem_size);
-	
-	RELAY( MemShift(mem, 1) );
-		
-	return 0;
-}
 
 int MemWritePt(Memory* mem, const void* elem, unsigned pointer) {
 	assert(mem);
@@ -198,14 +205,6 @@ int MemWritePt(Memory* mem, const void* elem, unsigned pointer) {
 }
 
 
-int MemEOF(Memory* mem) {
-	assert(mem);
-	assert(mem->elem_size);
-	
-	return (mem->pointer >= mem->size);
-}
-
-
 int MemEOFPt(Memory* mem, unsigned pointer) {
 	assert(mem);
 	assert(mem->elem_size);
@@ -218,29 +217,25 @@ int MemShift(Memory* mem, int position_delta) {
 	assert(mem);
 	assert(mem->elem_size);
 	
+	long int new_ptr = 0;
+	
 	//printf("ptr + delta: %d\n", mem->pointer + position_delta);
-	if ((int) mem->pointer + position_delta < 0) {
-		FATAL("Shifting will result in a negative pointer");
-		return -1;
-	}
+	if ((int) mem->pointer + position_delta < 0)
+		WARNING("Shifting will result in a negative pointer, so it will be 0");
+	else
+		new_ptr = mem->pointer + position_delta;
 	
-	unsigned new_ptr = mem->pointer + position_delta;
+	mem->pointer = new_ptr;
 	
-	RELAY( MemSeek(mem, new_ptr) );
-	return 0;
-}
-
-
-int MemSeek(Memory* mem, unsigned new_position) {
-	mem->pointer = new_position;
-	
+	/*
 	while ( new_position >= mem->size )
 		MemResize(mem, mem->size * GROW_BY);
 	
 	while ( new_position < mem->size / SHRINK_WHEN)
-		MemResize(mem, mem->size / SHRINK_BY);
-	
-	return 0;	
+		MemResize(mem, mem->size / SHRINK_BY);	
+	*/
+		
+	return 0;
 }
 
 

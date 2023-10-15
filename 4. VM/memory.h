@@ -11,13 +11,15 @@ int MemResize(Memory*, unsigned new_size);
 
 // Manipulating by pointer
 int MemRead(Memory*, void* elem);
-int MemReadPt(Memory*, void* elem, unsigned pointer);
 int MemWrite(Memory*, const void* elem);
-int MemWritePt(Memory*, const void* elem, unsigned pointer);
 int MemEOF(Memory*);
-int MemEOFPt(Memory*, unsigned pointer);
 int MemShift(Memory*, int position_delta);
 int MemSeek(Memory*, unsigned new_position);
+
+// Manipulating manually
+int MemReadPt(Memory*, void* elem, unsigned pointer);
+int MemWritePt(Memory*, const void* elem, unsigned pointer);
+int MemEOFPt(Memory*, unsigned pointer);
 
 // Getters
 unsigned MemGetSz(Memory*);
