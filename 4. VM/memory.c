@@ -56,9 +56,11 @@ int MemDump(Memory* mem) {
 					printf(YELLOW("%02X "), ((char*) mem->bytes)[i * mem->elem_size + j]);
 				else
 					printf("%02X ", ((char*) mem->bytes)[i * mem->elem_size + j]);
-		printf("}, Pointer = " YELLOW("%u") "\n", mem->pointer);
+		printf("}, Pointer = " YELLOW("%u"), mem->pointer);
 	} else
-		printf( "Data[" BLUE("NULL") "]\n" );
+		printf( "Data[" BLUE("NULL") "]" );
+		
+	printf(", Element size = " YELLOW("%u") "\n", mem->elem_size);
 	
 	return 0;
 }
