@@ -42,7 +42,7 @@ int MemDump(Memory* mem) {
 	assert(mem);
 	assert(mem->elem_size);
 
-	printf(GREEN("Memory") "[" BLUE("%p") "] ", mem);
+	printf(GREEN("Memory") "[" BLUE("%p") "] { ", mem);
 	
 	unsigned offset = 0;
 	if (mem->pointer > DUMP_LIMIT/2)
@@ -60,7 +60,7 @@ int MemDump(Memory* mem) {
 	} else
 		printf( "Data[" BLUE("NULL") "]" );
 		
-	printf(", Element size = " YELLOW("%u") "\n", mem->elem_size);
+	printf(", Element size = " YELLOW("%u") " }\n", mem->elem_size);
 	
 	return 0;
 }
