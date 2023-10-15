@@ -159,7 +159,32 @@ int MemEOF(Memory* mem) {
 	assert(mem);
 	assert(mem->elem_size);
 	
-	return (mem->pointer >= mem->size);
+	return MemEOFPt(mem, mem->pointer);
+}
+
+
+int MemShift(Memory* mem, int position_delta) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	mem->pointer = mem->pointer + position_delta;
+	
+	if (position_delta > 0)
+		while ( mem->pointer >= mem->size )
+			MemResize(mem, mem->size * GROW_BY);
+	
+	if (position_delta < 0)
+		while ( mem->pointer < mem->size / SHRINK_WHEN)
+			MemResize(mem, mem->size / SHRINK_BY);	
+			
+	return 0;
+}
+
+
+int MemSeek(Memory* mem, long int new_position) {
+	mem->pointer = new_position;
+	
+	return 0;
 }
 
 
@@ -209,33 +234,7 @@ int MemEOFPt(Memory* mem, unsigned pointer) {
 	assert(mem);
 	assert(mem->elem_size);
 	
-	return (pointer >= mem->size);
-}
-
-
-int MemShift(Memory* mem, int position_delta) {
-	assert(mem);
-	assert(mem->elem_size);
-	
-	long int new_ptr = 0;
-	
-	//printf("ptr + delta: %d\n", mem->pointer + position_delta);
-	if ((int) mem->pointer + position_delta < 0)
-		WARNING("Shifting will result in a negative pointer, so it will be 0");
-	else
-		new_ptr = mem->pointer + position_delta;
-	
-	mem->pointer = new_ptr;
-	
-	/*
-	while ( new_position >= mem->size )
-		MemResize(mem, mem->size * GROW_BY);
-	
-	while ( new_position < mem->size / SHRINK_WHEN)
-		MemResize(mem, mem->size / SHRINK_BY);	
-	*/
-		
-	return 0;
+	return (pointer < 0) || (pointer >= mem->size);
 }
 
 
