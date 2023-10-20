@@ -1,21 +1,23 @@
-#ifndef _CODE_H_
-#define _CODE_H_
+#ifndef _BYTECODE_H_
+#define _BYTECODE_H_
 
-#include <stdio.h>
+#include "instructions.h"
 
-#include "memory.h"
+union {
+	double farg;
+	long int iarg;
+	char inst[8];
+} code_word;
 
-// File format:
-// 1. unsigned - Magic number
-// 2. unsigned - Version
-// 3. unsigned - Filesize
+enum PAR_T {
+	NONE,
+	LITERAL,
+	REGISTER
+};
 
-const unsigned MAGIC   = 69236456;
-const unsigned VERSION = 13370000;
+code_word CWCtor(INSTRUCTIONS i, PAR_T p);
 
+INSTRUCTIONS CWIns(code_word cw);
+PAR_T CWPar(code_word cw);
 
-int WriteBytecode(FILE*, Memory*);
-Memory* ReadBytecode(FILE*);
-int ReadBytecodeMem(Memory*, FILE*);
-
-#endif /* _CODE_H_ */
+#endif /* _BYTECODE_H_ */
