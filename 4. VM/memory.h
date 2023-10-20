@@ -1,7 +1,14 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
 
-typedef struct _memory Memory;
+
+typedef struct _memory {
+	void* bytes;
+	unsigned elem_size;
+	unsigned size;
+	long int pointer;
+} Memory;
+
 
 Memory* MemCtor(unsigned elem_size);
 int MemDump(Memory*);

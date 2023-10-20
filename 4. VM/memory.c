@@ -8,14 +8,6 @@
 #include "memory.h"
 
 
-typedef struct _memory {
-	void* bytes;
-	unsigned elem_size;
-	unsigned size;
-	long int pointer;
-} Memory;
-
-
 const unsigned GROW_BY = 2;
 const unsigned SHRINK_WHEN = 3;
 const unsigned SHRINK_BY = 2;
