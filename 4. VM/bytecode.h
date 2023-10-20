@@ -9,6 +9,8 @@ union code_word {
 	char inst[8];
 };
 
+const unsigned CW_SZ = sizeof(code_word);
+
 enum PAR_T {
 	NONE,
 	LITERAL,
