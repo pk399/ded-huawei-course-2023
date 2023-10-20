@@ -13,6 +13,7 @@ int MemResize(Memory*, unsigned new_size);
 int MemRead(Memory*, void* elem);
 int MemWrite(Memory*, const void* elem);
 int MemEOF(Memory*);
+int MemAResize(Memory*);
 int MemShift(Memory*, int position_delta);
 int MemSeek(Memory*, unsigned new_position);
 int MemZero(Memory*);

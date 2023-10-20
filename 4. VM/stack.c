@@ -58,6 +58,7 @@ int StackPush(Stack* stk, const void* value) {
 	assert(stk->mem);
 	
 	MemShift(stk->mem, 1);
+	RELAY( MemAResize(stk->mem) );
 	RELAY( MemWrite(stk->mem, value) );
 	
 	return 0;
@@ -73,6 +74,7 @@ int StackPop(Stack* stk, void* value) {
 	MemRead(stk->mem, value);
 	MemZero(stk->mem);
 	MemShift(stk->mem, -1);
+	RELAY( MemAResize(stk->mem) );
 	
 	return 0;
 }

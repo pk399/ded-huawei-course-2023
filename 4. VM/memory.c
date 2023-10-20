@@ -166,21 +166,29 @@ int MemEOF(Memory* mem) {
 }
 
 
+int MemAResize(Memory* mem) {
+	assert(mem);
+	assert(mem->elem_size);
+	
+	if (mem->size != 0) {
+		while ( mem->pointer >= mem->size )
+			RELAY( MemResize(mem, mem->size * GROW_BY) );
+	
+		while ( mem->pointer < mem->size / SHRINK_WHEN
+				&& mem->size >= DEFAULT_SIZE*SHRINK_BY)
+			RELAY( MemResize(mem, mem->size / SHRINK_BY) );
+	}
+	
+	return 0;
+}
+
+
 int MemShift(Memory* mem, int position_delta) {
 	assert(mem);
 	assert(mem->elem_size);
 	
 	if (mem->size != 0) {
 		mem->pointer += position_delta;
-		
-		if (position_delta > 0)
-			while ( mem->pointer >= mem->size )
-				MemResize(mem, mem->size * GROW_BY);
-		
-		if (position_delta < 0)
-			while ( mem->pointer < mem->size / SHRINK_WHEN
-					&& mem->size >= DEFAULT_SIZE*SHRINK_BY)
-				MemResize(mem, mem->size / SHRINK_BY);
 	}
 			
 	return 0;
