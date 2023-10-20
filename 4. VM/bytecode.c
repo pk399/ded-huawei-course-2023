@@ -2,7 +2,7 @@
 
 
 code_word CWCtor(INSTRUCTIONS i, PAR_T p) {
-	code_word cw = 0;
+	code_word cw = {0};
 	
 	cw.inst[0] = i;
 	

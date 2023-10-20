@@ -3,11 +3,11 @@
 
 #include "instructions.h"
 
-union {
+union code_word {
 	double farg;
 	long int iarg;
 	char inst[8];
-} code_word;
+};
 
 enum PAR_T {
 	NONE,
