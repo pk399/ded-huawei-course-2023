@@ -1,43 +1,35 @@
-#include <stdio.h>
-
 #include "cmd.h"
 
 
-char CmdCtor(enum INSTRUCTIONS i) {
-	return i & 0x1f;
-}
-
-
-char CmdCtorPar(enum INSTRUCTIONS i, enum PARAM_TYPE pt) {
-	char res = CmdCtor(i);
-
-	switch (pt)	{
-		case LITERAL:
-			res |= 1 << 5;
-			break;
-		case REGISTER:
-			res |= 1 << 6;
-			break;
+code_word CWCtor(INSTRUCTIONS i, PAR_T p) {
+	code_word cw = 0;
+	
+	cw.inst[0] = i;
+	
+	switch (p) {
+		LITERAL:
+			cw.inst[1] = 1;
+		REGISTER:
+			cw.inst[2] = 1;
+		NONE:
 		default:
-			printf("CmdCtorPar: reached default case\n");
+			break;
 	}
 	
-	return res;
+	return cw;
 }
 
 
-enum INSTRUCTIONS CmdI(char cmd) {
-	return (enum INSTRUCTIONS) (cmd & 0x1f);
+INSTRUCTIONS CWIns(code_word cw) {
+	return (INSTRUCTIONS) cw.inst[0];
 }
 
 
-enum PARAM_TYPE CmdPar(char cmd) {
-	switch (cmd & 0xe0) {
-		case (1 << 5):
-			return LITERAL;
-		case (1 << 6):
-			return REGISTER;
-		default:
-			return (enum PARAM_TYPE) -printf("CmdPar: reached default case\n");
-	}
+PAR_T CWPar(code_word cw) {
+	if ( cw.inst[1] == 1 )
+		return LITERAL;
+	else if ( cw.inst[2] == 1)
+		return REGISTER;
+	
+	return NONE;
 }

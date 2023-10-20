@@ -3,15 +3,21 @@
 
 #include "instructions.h"
 
-enum PARAM_TYPE {
+union {
+	double farg;
+	long int iarg;
+	char inst[8];
+} code_word;
+
+enum PAR_T {
+	NONE,
 	LITERAL,
 	REGISTER
 };
 
-char CmdCtor(enum INSTRUCTIONS i);
-char CmdCtorPar(enum INSTRUCTIONS i, enum PARAM_TYPE param_type);
+code_word CWCtor(INSTRUCTIONS i, PAR_T p);
 
-enum INSTRUCTIONS CmdI(char cmd);
-enum PARAM_TYPE CmdPar(char cmd);
+INSTRUCTIONS CWIns(code_word cw);
+PAR_T CWPar(code_word cw);
 
 #endif /* _CMD_H_ */
