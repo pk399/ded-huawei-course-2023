@@ -1,5 +1,5 @@
-#ifndef _MEMFILE_H_
-#define _MEMFILE_H_
+#ifndef _BCFILE_H_
+#define _BCFILE_H_
 
 #include <stdio.h>
 
@@ -11,11 +11,11 @@
 // 3. unsigned - Filesize
 
 const unsigned MAGIC   = 69236456;
-const unsigned VERSION = 13370000;
+const unsigned VERSION = 13370001;
 
 
 int WriteBytecode(FILE*, Memory*);
 Memory* ReadBytecode(FILE*);
 int ReadBytecodeMem(Memory*, FILE*);
 
-#endif /* _MEMFILE_H_ */
+#endif /* _BCFILE_H_ */
