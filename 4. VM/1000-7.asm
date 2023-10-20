@@ -1,16 +1,9 @@
-; 10??-ded
-push 30
+; 1000-ded
+push 3000
 push 3
 div
-pop rax
-push rax
-pop rbx
-push rbx ; This is a comment
-pop rcx
-push 127
-push rcx
-push 7
-push 1
+push 700
+push 100
 div
 sub
 out

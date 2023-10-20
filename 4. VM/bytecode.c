@@ -1,3 +1,6 @@
+#include <stdio.h>
+
+
 #include "bytecode.h"
 
 
@@ -5,18 +8,25 @@ code_word CWCtor(INSTRUCTIONS i, PAR_T p) {
 	code_word cw = {0};
 	
 	cw.inst[0] = i;
-	
+
 	switch (p) {
-		LITERAL:
+		case LITERAL:
 			cw.inst[1] = 1;
-		REGISTER:
+			break;
+		case REGISTER:
 			cw.inst[2] = 1;
-		NONE:
+			break;
+		case NONE:
 		default:
 			break;
 	}
 	
 	return cw;
+}
+
+
+void CWDump(code_word cw) {
+	printf("%04ld ", cw.iarg);
 }
 
 

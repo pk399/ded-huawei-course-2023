@@ -19,6 +19,8 @@ enum PAR_T {
 
 code_word CWCtor(INSTRUCTIONS i, PAR_T p);
 
+void CWDump(code_word);
+
 INSTRUCTIONS CWIns(code_word cw);
 PAR_T CWPar(code_word cw);
 
