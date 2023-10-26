@@ -18,7 +18,7 @@ build_dir:
 
 install: lib
 	cp $(BUILD_DIR)lib$(TARGET_EXEC).a ../common/lib/
-	gcc -E $(SRC_DIR)stack_include.h > ../common/include/$(TARGET_EXEC).h
+	python3 hackinclude.py $(SRC_DIR)config.h $(SRC_DIR)stack_include.h > ../common/include/$(TARGET_EXEC).h
 	
 uninstall:
 	rm ../common/lib/lib$(TARGET_EXEC).a
