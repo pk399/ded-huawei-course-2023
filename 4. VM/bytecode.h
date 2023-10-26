@@ -9,6 +9,14 @@ union code_word {
 	char inst[8];
 };
 
+// struct opcode
+// {
+//     int code : 6;
+//     int arg_type : 2;
+// }
+
+// typedef int64_t reg_type
+
 const unsigned CW_SZ = sizeof(code_word);
 
 enum PAR_T {

@@ -8,6 +8,12 @@
 
 #include "stack.h"
 
+// typedef double stack_type;
+// struct stack
+// { int capacity;
+//   int size;
+//   stack_type* data;
+// }
 
 struct _stack {
 	Memory* mem;

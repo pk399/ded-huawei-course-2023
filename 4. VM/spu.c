@@ -14,12 +14,16 @@
 
 const unsigned REG_COUNT = 4;
 
+
+// _spu?
+// SPU
 struct _spu {
 	Stack* stack;
 	code_word registers[REG_COUNT];
-	Memory* code;
+	Memory* code; // char* code??
 };
 
+// SPUExecute(Memory* code)
 
 SPU* SPUCtor() {
 	SPU* spu = (SPU*) calloc(1, sizeof(SPU));
@@ -96,6 +100,11 @@ int SPUStackPush(SPU* spu, code_word val) {
 	return StackPush(spu->stack, &val);
 }
 
+// int getArg() { *(double*)code =
+
+ 
+// char* code = loadBinary()
+// SPUExecute(code)
 
 int SPUStackPop(SPU* spu, code_word* val) {
 	return StackPop(spu->stack, val);
@@ -120,6 +129,9 @@ int SPUStep(SPU* spu) {
 		( arg.iarg < 0 || arg.iarg >= REG_COUNT))
 		return -1;
 	
+	// remove PT
+	// IARG?
+	// 
 	switch ( CWIns(cmd) ) {
 		#define HALT return 1;
 		#define ARG arg
@@ -138,6 +150,9 @@ int SPUStep(SPU* spu) {
 		#define F(arg) (arg).farg
 		#define IARG(arg) (code_word) { .iarg = (arg) }
 		#define FARG(arg) (code_word) { .farg = (arg) }
+		
+		
+		
 		#define DC(num, name, has_arg, ...) case CMD_ ## name:  \
 												{               \
 													__VA_ARGS__ \
@@ -154,7 +169,7 @@ int SPUStep(SPU* spu) {
 
 int SPUExec(SPU* spu) {
 	while ( !SPUStep(spu) )
-		/*SPUDump(spu)*/;
+		SPUDump(spu);
 		
 	return 0;
 }
@@ -163,14 +178,14 @@ int SPUExec(SPU* spu) {
 int main() {
 	SPU* spu = SPUCtor();
 	
-	//SPUDump(spu);
+	SPUDump(spu);
 	
 	printf("Reading bytecode...\n");
 	SPULoad(spu, "out.bc");
 	
 	SPUExec(spu);
 	
-	//SPUDump(spu);
+	SPUDump(spu);
 	
 	SPUDtor(spu);
 }

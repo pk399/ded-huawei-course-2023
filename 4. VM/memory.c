@@ -252,6 +252,7 @@ int MemWritePt(Memory* mem, const void* elem, unsigned pointer) {
 }
 
 
+// indx
 int MemEOFPt(Memory* mem, unsigned pointer) {
 	assert(mem);
 	assert(mem->elem_size);

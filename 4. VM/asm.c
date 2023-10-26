@@ -27,7 +27,10 @@ code_word ParseParameter(char* str, PAR_T *pt) {
 	
 	code_word arg = {0};
 	
-	if (strlen(str) == 3 && str[0] == 'R', str[2] == 'X') {
+	// RAX RBX RCX RDX
+	// RSP RBP RDP R8 R9 R10
+	// if ( stricmp("rax")
+	if (strlen(str) == 3 && str[0] == 'R' && str[2] == 'X') {
 		*pt = REGISTER;
 		arg.iarg = str[1] - 'A';
 		return arg;
@@ -38,11 +41,13 @@ code_word ParseParameter(char* str, PAR_T *pt) {
 	return arg;
 }
 
+// Error handling
 
 void ParseFile(Memory* code, FILE* file) {
 	Text* txt = TextCtor(file);
 	
 	char* line = 0;
+	// string_count
 	for (unsigned i = 0; line = TextGetLine(txt, i); i++) {
 		
 		printf("Encountered line: |%s|\n", line);

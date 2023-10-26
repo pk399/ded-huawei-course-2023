@@ -1,12 +1,20 @@
 #define TWO_POPS    ARG_T a = ARG_ZERO; \
 					ARG_T b = ARG_ZERO; \
 										\
-					RELAY( DO_POP(a) );\
+					RELAY( DO_POP(a) ); \
 					RELAY( DO_POP(b) );
 
+// DEF_CMD??
 DC(-1, HLT,  0, {
 	HALT;
 })
+
+//  cmd_code  cmd_name, arg_type,   code
+// DC( 0,     PUSH,       1,        ... )
+
+// DC( 0, PUSH, IMM, {} )
+// DC( 0, PUSH, REG, {} )
+
 
 DC( 0, PUSH, 1, {
 	switch (PT) {
@@ -55,19 +63,19 @@ DC( 3, OUT,  0, {
 })
 
 DC( 4, ADD,  0, {
-	TWO_POPS
+	TWO_POPS;
 	
 	RELAY( DO_PUSH(IARG( I(a) + I(b) )) );
 })
 
 DC( 5, SUB,  0, {
-	TWO_POPS
+	TWO_POPS;
 	
 	RELAY( DO_PUSH(IARG( I(b) - I(a) )) );
 })
 
 DC( 6, MUL,  0, {
-	TWO_POPS
+	TWO_POPS;
 	
 	RELAY( DO_PUSH(IARG( I(b) * I(a) )) );
 })

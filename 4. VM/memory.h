@@ -5,10 +5,11 @@
 typedef struct _memory {
 	void* bytes;
 	unsigned elem_size;
-	unsigned size;
-	long int pointer;
+	unsigned size; // capacity
+	long int pointer; // size
 } Memory;
 
+// char* code
 
 Memory* MemCtor(unsigned elem_size);
 int MemDump(Memory*);
