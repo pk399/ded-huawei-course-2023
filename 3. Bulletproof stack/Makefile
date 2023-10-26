@@ -1,17 +1,31 @@
 TARGET_EXEC = stack
 
+SRC_DIR   = src/
+BUILD_DIR = build/
+
 CC = g++
 CFLAGS = -O3
 
-SRC_FILES = main.cpp stack.cpp stack_debug.cpp stack_canary.cpp stack_hash.cpp
-OBJ_FILES = $(patsubst %.cpp,%.o,$(SRC_FILES))
+SRC_FILES := stack.cpp stack_debug.cpp stack_canary.cpp stack_hash.cpp
+OBJ_FILES := $(patsubst %.cpp,%.o,$(SRC_FILES))
 
-$(TARGET_EXEC): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@
+lib: build_dir $(OBJ_FILES)
+	ar rvs $(BUILD_DIR)lib$(TARGET_EXEC).a	 $(addprefix $(BUILD_DIR),$(filter %.o,$^))
+#	$(CC) $(addprefix $(BUILD_DIR),$(OBJ_FILES)) -o $@
+
+build_dir:
+	mkdir -p build
+
+install: lib
+	cp $(BUILD_DIR)lib$(TARGET_EXEC).a ../common/lib/
+	gcc -E $(SRC_DIR)stack_include.h > ../common/include/$(TARGET_EXEC).h
 	
+uninstall:
+	rm ../common/lib/lib$(TARGET_EXEC).a
+	rm ../common/include/$(TARGET_EXEC).h
+
 clean:
-	rm *.o
-	rm $(TARGET_EXEC)
+	rm -r $(BUILD_DIR)
 	
-%.o: %.cpp
-	$(CC) -c $(CFLAGS) $< -o $@
+$(OBJ_FILES): %.o: $(SRC_DIR)%.cpp build_dir
+	$(CC) -c $(CFLAGS) $< -o $(BUILD_DIR)$@
