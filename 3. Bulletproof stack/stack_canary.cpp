@@ -1,8 +1,9 @@
 #include <assert.h>
 
-#include "stack.h"
+#include "stack_internal.h"
 
 
+#ifdef CANARY
 canary_t* LeftDataCanaryPtr(stack_t* ptr) {
 	#ifdef HASH // Hash is left from data, then canary
 		return ( (canary_t*) DataHashPtr(ptr) ) - 1;
@@ -17,14 +18,14 @@ canary_t* RightDataCanaryPtr(stack_t* ptr, size_t capacity) {
 }
 
 
-void WriteStructCanary(Stack* stk, canary_t val) {
+void WriteCanary(Stack* stk, canary_t val) {
 	stk->left_canary = val;
 	stk->right_canary = val;
-}
-
-void WriteDataCanary(Stack* stk, canary_t val) {
-	*LeftDataCanaryPtr(stk->data) = val;
-	*RightDataCanaryPtr(stk->data, stk->capacity) = val;
+	
+	if (stk->data) {
+		*LeftDataCanaryPtr(stk->data) = val;
+		*RightDataCanaryPtr(stk->data, stk->capacity) = val;
+	}
 }
 
 
@@ -44,3 +45,4 @@ error_t CheckCanary(const Stack* stk) {
 
     return err;
 }
+#endif

@@ -1,8 +1,9 @@
 #include <assert.h>
 
-#include "stack.h"
+#include "stack_internal.h"
 
 
+#ifdef DEBUG
 inline const char* InsideStackMarker(const Stack* stk, size_t i) {
 	return (i < stk->size) ? "*" : " ";
 }
@@ -15,9 +16,15 @@ void StackDump(const Stack* stk, FILE* stream, const char* caller_file, size_t c
 
     fprintf(stream, "Stack [%p] ", stk);
 
-    if (err & NO_DEBUG_DATA) 
+    if (err & NO_DEBUG_DATA) {
+    	#define RED_COLOR "\033[1;31m"
+		#define NORMAL_COLOR "\033[1;0m"
+    
         fprintf(stream, RED_COLOR "no debug data inside Stack" NORMAL_COLOR "\n");
-    else
+        
+        #undef RED_COLOR
+        #undef NORMAL_COLOR
+	} else
         fprintf(stream, "\"%s\" from %s(%zd) %s()\n",
                stk->debug.var, stk->debug.file, stk->debug.line, stk->debug.func);
     
@@ -80,3 +87,4 @@ void StackDump(const Stack* stk, FILE* stream, const char* caller_file, size_t c
     
     #undef TAB
 }
+#endif

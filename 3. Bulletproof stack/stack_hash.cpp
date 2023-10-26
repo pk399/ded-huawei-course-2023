@@ -1,6 +1,7 @@
-#include "stack.h"
+#include "stack_internal.h"
 
 
+#ifdef HASH
 hash_t* DataHashPtr(stack_t* ptr) {
 	return ( (hash_t*) ptr ) - 1;
 }
@@ -38,12 +39,11 @@ error_t CheckHash(Stack* stk) {
 }
 
 
-void SyncStructHash(Stack* stk) {
+void SyncHash(Stack* stk) {
 	stk->hash = 0;
 	stk->hash = DJBHash(stk, sizeof(Stack));
-}
 
-
-void SyncDataHash(Stack* stk) {
-	*DataHashPtr(stk->data) = DJBHash(stk->data, StackDataElemsSize(stk->capacity));
+	if (stk->data)
+		*DataHashPtr(stk->data) = DJBHash(stk->data, StackDataElemsSize(stk->capacity));
 }
+#endif // HASH

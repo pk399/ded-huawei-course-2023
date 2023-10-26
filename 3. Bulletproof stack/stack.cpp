@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "stack.h"
+#include "stack_internal.h"
 
 
 error_t IgnoreError(error_t err, ERROR ignore) {
@@ -119,20 +119,19 @@ RESULT StackRealloc(Stack* stk, size_t new_cap) {
         return REALLOC_FAILED;
  
   	stk->data = FromRealPtr(res);
-  	
+ 	
     if (new_cap > stk->capacity)
         for (size_t i = stk->capacity; i < new_cap; i++)
             stk->data[i] = STACK_POISON_VALUE;
 
     stk->capacity = new_cap;
-    
+
     #ifdef HASH
-		SyncDataHash(stk);
-		SyncStructHash(stk);
+		SyncHash(stk);
 	#endif
 
     #ifdef CANARY
-    	WriteDataCanary(stk, CANARY_VAL);
+    	WriteCanary(stk, CANARY_VAL);
     #endif
 
     return SUCCESS;
@@ -152,15 +151,15 @@ RESULT StackCtor(Stack* stk, const char* var, const char* file, size_t line, con
     #endif
 
     #ifdef CANARY
-		WriteStructCanary(stk, CANARY_VAL);
+		WriteCanary(stk, CANARY_VAL);
     #endif
 
     stk->size = 0;
     stk->capacity = 0;
-    stk->data = 0;
+    stk->data = NULL;
     
     #ifdef HASH
-	    SyncStructHash(stk);
+	    SyncHash(stk);
 	#endif
 
 	RESULT res = StackRealloc(stk, STACK_DEFAULT_CAPACITY); 
@@ -192,7 +191,7 @@ RESULT StackDtor(Stack* stk) {
     stk->capacity = 0;
 	
 	#ifdef CANARY
-		WriteStructCanary(stk, CANARY_DTOR_VAL);
+		WriteCanary(stk, CANARY_DTOR_VAL);
     #endif
     
     #ifdef HASH
@@ -218,8 +217,7 @@ RESULT StackPush(Stack* stk, stack_t val) {
     stk->data[stk->size++] = val;
     
     #ifdef HASH
-		SyncDataHash(stk);
-		SyncStructHash(stk);
+		SyncHash(stk);
 	#endif
 
     return SUCCESS;
@@ -241,8 +239,7 @@ RESULT StackPop(Stack* stk, stack_t* val) {
     stk->data[--stk->size] = STACK_POISON_VALUE;
     
     #ifdef HASH
-		SyncDataHash(stk);
-		SyncStructHash(stk);
+		SyncHash(stk);
 	#endif
 
     if (stk->size <= stk->capacity / SHRINK_WHEN) {
