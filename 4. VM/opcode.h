@@ -12,6 +12,8 @@ enum ARG_TYPE {
 //   REG   \------------|
 //      IMM     CMD
 
+char OPCtor(unsigned num, ARG_TYPE argt);
+
 ARG_TYPE OPGetArg(char opcode);
 unsigned OPGetCmd(char opcode);
 

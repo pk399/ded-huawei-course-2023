@@ -1,6 +1,19 @@
-#include "cmd.h"
-
 #include "opcode.h"
+
+
+char OPCtor(unsigned num, ARG_TYPE argt) {
+    char opcode = num & 0x1f;
+    
+    switch (argt) {
+        case IMM:
+            opcode = opcode | (1 << 5);
+            break;
+        case REG:
+            opcode = opcode | (1 << 6);
+            break;
+    } 
+    return opcode;
+}
 
 
 ARG_TYPE OPGetArg(char opcode) {
@@ -18,12 +31,12 @@ ARG_TYPE OPGetArg(char opcode) {
 unsigned OPGetCmd(char opcode) {
     unsigned num = opcode & 0x1f;
 
-    #define DEF_CMD(num, name, ...) if (opcode == num) return num; else
+    #define DEF_CMD(NUM, NAME, ...) if (num == NUM) return NUM; else
     
     #include "cmd_def.h"
     
     #undef DEF_CMD
     /* else */ if (0) ;
-    
+ 
     return 0; // HLT
 }

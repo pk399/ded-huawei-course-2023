@@ -2,12 +2,12 @@
 
 #include "error.h"
 
-#include "regs.h"
+#include "reg.h"
 
 const char* RegStr(unsigned reg_n) {
 	#define DEF_REG(num, name) if (reg_n == num) { return #name; } else
 	
-	#include "regs_def.h"
+	#include "reg_def.h"
 	/* else */ if (0) ;
 	
 	FATAL("Reg doesn't exist!");

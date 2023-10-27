@@ -1,56 +1,78 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
 #include <stdlib.h>
+#include <ctype.h>
 
-#include "instructions.h"
-#include "memory.h"
-#include "tiny_onegin.h"
 #include "bcfile.h"
-#include "bytecode.h"
 #include "error.h"
+#include "opcode.h"
 
 
-void StrToUpper(char* str) {
-	for (unsigned i = 0; str[i]; i++)
-		str[i] = toupper(str[i]);
+const unsigned CODE_SZ = 1000000; // One million dh
+const unsigned LINE_SZ = 1000;
+
+
+// Global vars
+char code[CODE_SZ] = {};
+unsigned ip = 0;
+
+
+// https://stackoverflow.com/questions/5820810/case-insensitive-string-comparison-in-c
+int MyStricmp(const char* a, const char* b) {
+    for ( ; ; a++, b++) {
+        int d = tolower(*a) - tolower(*b);
+        if (d != 0 || !*a)
+            return d;
+    }
 }
 
 
-code_word ParseParameter(char* str, PAR_T *pt) {
+double ParseParameter(char* str, ARG_TYPE *argt) {
 	assert(str);
 	assert(strlen(str));
+	assert(argt);
 	
-	StrToUpper(str);
-	printf("Parsing parameter |%s|\n", str);
-	
-	code_word arg = {0};
-	
-	// RAX RBX RCX RDX
-	// RSP RBP RDP R8 R9 R10
-	// if ( stricmp("rax")
-	if (strlen(str) == 3 && str[0] == 'R' && str[2] == 'X') {
-		*pt = REGISTER;
-		arg.iarg = str[1] - 'A';
-		return arg;
-	}
-	
-	*pt = LITERAL;
-	arg.iarg = atoi(str);
-	return arg;
+	#define DEF_REG(num, name) if ( !MyStricmp(str, #name) ) { \
+	                               *argt = REG;                \
+	                               return num;                 \
+	                           } else
+    
+    #include "reg_def.h"
+    #undef DEF_REG
+    /* else */ if (0) ;   
+    	
+	*argt = IMM;
+	return atof(str);
 }
 
-// Error handling
 
-void ParseFile(Memory* code, FILE* file) {
-	Text* txt = TextCtor(file);
-	
-	char* line = 0;
-	// string_count
-	for (unsigned i = 0; line = TextGetLine(txt, i); i++) {
+int CodeWriteOP(char op) {
+    if ( ip >= CODE_SZ )
+        return -1;
+    
+    code[ip++] = op;
+    
+    return 0;
+}
+
+
+int CodeWritePar(double par) {
+    if ( ip + sizeof(double) - 1 >= CODE_SZ)
+        return -1;
+    
+    *((double*) (code + ip)) = par;
+    ip += sizeof(double);
+    
+    return 0;
+}
+
+
+void ParseFile(FILE* file) {
+	char line[LINE_SZ] = {};
+	for (unsigned i = 0; fgets(line, LINE_SZ, file); i++) {
 		
-		printf("Encountered line: |%s|\n", line);
+		printf("Encountered line %u: |%s|\n", i, line);
 	
 		char* comment = strchr(line, ';');
 		if (comment)
@@ -58,46 +80,37 @@ void ParseFile(Memory* code, FILE* file) {
 			
 		printf("After removing comment: |%s|\n", line);
 			
-		if (!strlen(line))
-			continue;
-			
-		char* word = strtok(line, " \t\n");
-		if (!word)
+		char* cmd_str = strtok(line, " \t\n");
+		if (!cmd_str)
 			continue;
 		
-		StrToUpper(word);
-		printf("Word: %s\n", word);
+		printf("Command: |%s|\n", cmd_str);
 		
-		#define DC(num, name, par, ...) if (!strcmp(word, #name)) {                                \
-											printf("Encountered %s\n", #name);                     \
-											                                                       \
-											PAR_T pt = NONE;									   \
-																								   \
-											code_word arg = {0};								   \
-											if (par)                                               \
-												arg = ParseParameter( strtok(NULL, " \t\n"), &pt); \
-																								   \
-											code_word ins = CWCtor(CMD_ ## name, pt);			   \
-											MemWrite(code, &ins);								   \
-											MemShift(code, 1);									   \
-											MemAResize(code);									   \
-																								   \
-											if (par) {									           \
-												MemWrite(code, &arg);                              \
-												MemShift(code, 1);                                 \
-												MemAResize(code);                                  \
-											}                                                      \
-										} else
+		ARG_TYPE argt = NOP;
+
+		char* param_str = strtok(NULL, " \t\n");
+		printf("Parameter: |%s|\n", param_str);
+		double param = 0.0;
 		
-		#include "commands.h"
-		#undef CD
-		{
-			WARNING("Instruction doesn't exist");
+		if (param_str) {
+		    printf("Decided to parse parameter\n");
+			param = ParseParameter(param_str, &argt);
+	    }
+		
+		#define DEF_CMD(NUM, NAME, ARG, ...) if ( !MyStricmp(cmd_str, #NAME) && argt == ARG ) { \
+		                                        printf("Encountered %s(%s)\n", #NAME, #ARG);   \
+                                                CodeWriteOP(OPCtor(NUM, argt));                \
+										        if (argt != NOP)                               \
+										            CodeWritePar(param);                       \
+										    } else
+		
+		#include "cmd_def.h"
+		#undef DEF_CMD
+		/* else */ if (1) {
+			//WARNING("No match for on %s(%d) line %u was found!", cmd_str, argt, i+1);
+			WARNING("No match for command was found!");
 		}
-		
 	}
-	
-	TextDtor(txt);
 }
 
 
@@ -112,25 +125,22 @@ printf("ARGS: %s\n", args[1]);
 	FILE* in_file = fopen(args[1], "rt");
 	if (!in_file)
 		return -printf("Failed to open input file (%s)\n", args[1]);
-		
-	Memory* code = MemCtor(CW_SZ);
-	assert(code); // SegFault ?! No, u just stupid
 	
-	ParseFile(code, in_file);
+	ParseFile(in_file);
 	
 	FILE* out_file = NULL;
 	if (argc < 3) {
 		out_file = fopen("out.bc", "wt");
-printf("Picking out.b\n");
+printf("Picking out.bc\n");
 	} else
 		out_file = fopen(args[2], "wt");
 	if (!out_file)
 		return -printf("Failed to open file for writing\n");
 	
-	MemResize(code, code->pointer);
-	WriteBytecode(out_file, code);
 	
-	MemDtor(code);
+	ip = (ip > CODE_SZ) ? CODE_SZ : ip;
+	WriteBytecode(out_file, code, ip);
+	
 	fclose(in_file);
 	fclose(out_file);
 		

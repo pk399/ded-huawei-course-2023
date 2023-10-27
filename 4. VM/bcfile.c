@@ -73,7 +73,7 @@ int LoadBytecode(char* arr, unsigned* sz, FILE* file) {
 		return -1;
 	}
 	
-	if ( realloc(arr, file_size) ) return (FATAL("Error resizing array"), -1);
+	if ( !(arr = (char*) realloc(arr, file_size)) ) return (FATAL("Error resizing array"), -1);
 	*sz = file_size;
 	
 	read = fread(arr, sizeof(char), file_size, file);

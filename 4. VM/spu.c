@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 
-#include "regs.h"
+#include "reg.h"
 #include "stack.h"
 #include "colors.h"
 #include "bcfile.h"
@@ -58,9 +59,9 @@ int SPUDump(SPU* spu) {
 	
 	printf("\t Stack: ");
 	if (spu->stack->size) {
-	    printf(">" YELLOW("%.2lf") "<", spu->stack->data[0]);
+	    printf(">" YELLOW("%.2lf") "<", spu->stack->data[spu->stack->size - 1]);
 	    
-	    for (unsigned i = 1; i < spu->stack->size && i < DUMP_LIMIT; i++)
+	    for (int i = spu->stack->size - 2; i >= 0 && spu->stack->size - i < DUMP_LIMIT; i--)
 	        printf(" %.2lf", spu->stack->data[i]);
 	} else {
 	    printf("empty");
@@ -69,14 +70,17 @@ int SPUDump(SPU* spu) {
 	
 	printf("\t Registers:");
 	for (unsigned i = 0; i < REG_COUNT && i < DUMP_LIMIT; i++)
-		printf(" %s: %.2lf;", RegStr(i), spu->regs[i]);
+	    if (spu->regs[i] < DBL_EPSILON) // TODO: replace with function
+		    printf(" %s: %.2lf;", RegStr(i), spu->regs[i]);
+		else
+    		printf(" %s: " YELLOW("%.2lf") ";", RegStr(i), spu->regs[i]);
 	printf("\n");
 	
 	unsigned shift = 0;
 	if (spu->ip > DUMP_LIMIT/2)
 	    shift = spu->ip - DUMP_LIMIT/2;
 	
-	printf("\t Code:");
+	printf("\t Code(ip = %u):", spu->ip);
 	for (unsigned i = shift; i < spu->code_sz && i < DUMP_LIMIT + shift; i++)
 	    if (i == spu->ip)
 	        printf( YELLOW(" %2X"), spu->code[i] );
@@ -164,7 +168,7 @@ STEP_RES SPUStep(SPU* spu) {
 	    
 	    reg = &(spu->regs[num]);
 	}
-	
+
 	double to_push[MX_CMD_BUF] = {};
 	double poped[MX_CMD_BUF] = {};
 	
