@@ -3,7 +3,7 @@
 
 // If changed, sync with regs_def.h
 // Maybe'll do codegen later
-const unsigned REG_COUNT = 4;
+const unsigned REG_COUNT = 5;
 
 
 const char* RegStr(unsigned reg_n);

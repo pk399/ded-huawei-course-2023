@@ -1,45 +1,29 @@
-#include <stdio.h>
+#include "cmd.h"
+
+#include "opcode.h"
 
 
-#include "bytecode.h"
-
-
-code_word CWCtor(INSTRUCTIONS i, PAR_T p) {
-	code_word cw = {0};
-	
-	cw.inst[0] = i;
-
-	switch (p) {
-		case LITERAL:
-			cw.inst[1] = 1;
-			break;
-		case REGISTER:
-			cw.inst[2] = 1;
-			break;
-		case NONE:
-		default:
-			break;
-	}
-	
-	return cw;
+ARG_TYPE OPGetArg(char opcode) {
+    switch (opcode & 0x60) {
+        case (1 << 5):
+            return IMM;
+        case (1 << 6):
+            return REG;
+        default:
+            return NOP;
+    }
 }
 
 
-void CWDump(code_word cw) {
-	printf("%04ld ", cw.iarg);
-}
+unsigned OPGetCmd(char opcode) {
+    unsigned num = opcode & 0x1f;
 
-
-INSTRUCTIONS CWIns(code_word cw) {
-	return (INSTRUCTIONS) cw.inst[0];
-}
-
-
-PAR_T CWPar(code_word cw) {
-	if ( cw.inst[1] == 1 )
-		return LITERAL;
-	else if ( cw.inst[2] == 1)
-		return REGISTER;
-	
-	return NONE;
+    #define DEF_CMD(num, name, ...) if (opcode == num) return num; else
+    
+    #include "cmd_def.h"
+    
+    #undef DEF_CMD
+    /* else */ if (0) ;
+    
+    return 0; // HLT
 }

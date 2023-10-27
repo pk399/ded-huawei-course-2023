@@ -8,7 +8,7 @@
 #include "bcfile.h"
 
 
-int WriteBytecode(FILE* file, char* arr, unsigned sz); {
+int WriteBytecode(FILE* file, char* arr, unsigned sz) {
 	assert(file);
 	assert(arr);
 
@@ -51,14 +51,14 @@ int LoadBytecode(char* arr, unsigned* sz, FILE* file) {
     unsigned read = 0;
     
 	unsigned magic = 0;
-	read = fread(&magic, 1, sizeof(magic), file);
+	read = fread(&magic, sizeof(magic), 1, file);
 	if (read != 1 || memcmp(&magic, &MAGIC, sizeof(magic))) {
 		FATAL("Magic number mismatch");
 		return -1;
 	}
 	
 	unsigned version = 0;
-	read = fread(&version, 1, sizeof(version), file);
+	read = fread(&version,sizeof(version), 1, file);
 	if (read != 1 || version != VERSION) {
 		FATAL("Version mismatch");
 		//printf("__func__: Version mismatch (%u != %u)\n", version, VERSION);
@@ -67,13 +67,14 @@ int LoadBytecode(char* arr, unsigned* sz, FILE* file) {
 	}
 	
 	unsigned file_size = 0;
-	read = fread(&file_size, 1, sizeof(file_size), file);
+	read = fread(&file_size,  sizeof(file_size), 1, file);
 	if (read != 1 || !file_size) {
 		FATAL("File size is 0");
 		return -1;
 	}
 	
 	if ( realloc(arr, file_size) ) return (FATAL("Error resizing array"), -1);
+	*sz = file_size;
 	
 	read = fread(arr, sizeof(char), file_size, file);
 	if (read != file_size) {

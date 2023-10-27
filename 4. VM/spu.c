@@ -1,27 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 
+#include "regs.h"
 #include "stack.h"
 #include "colors.h"
-#include "memory.h"
-#include "bytecode.h"
-#include "instructions.h"
 #include "bcfile.h"
 #include "error.h"
+#include "opcode.h"
 
 #include "spu.h"
 
-const unsigned REG_COUNT = 4;
-
-
-// _spu?
-// SPU
-struct _spu {
-	Stack* stack;
-	code_word registers[REG_COUNT];
-	Memory* code; // char* code??
-};
+// SPU operates with doubles
+// opcodes are chars
 
 // SPUExecute(Memory* code)
 
@@ -29,13 +21,21 @@ SPU* SPUCtor() {
 	SPU* spu = (SPU*) calloc(1, sizeof(SPU));
 	if (!spu) return spu;
 	
-	spu->stack = StackCtor(CW_SZ);
-	spu->code = MemCtor(CW_SZ);
-	if (!spu->stack || !spu->code) {
-		free(spu);
-		StackDtor(spu->stack);
-		MemDtor(spu->code);
-		return NULL;
+	spu->stack = (Stack*) calloc(1, sizeof(Stack));
+	if (
+	    !spu->stack ||
+        STACKCTOR(spu->stack)    
+	   ) {
+        free(spu);
+        return NULL;
+    }
+	
+	spu->code = (char*) calloc(DEFAULT_CODE_SIZE, sizeof(char));
+	spu->code_sz = DEFAULT_CODE_SIZE;
+	if (!spu->code) {
+	    StackDtor(spu->stack);
+	    free(spu);
+	    return NULL;
 	}
 	
 	return spu;
@@ -45,7 +45,7 @@ SPU* SPUCtor() {
 int SPUDtor(SPU* spu) {
 	if (spu) {
 		StackDtor(spu->stack);
-		MemDtor(spu->code);
+		free(spu->code);
 		free(spu);
 	}
 	
@@ -56,16 +56,33 @@ int SPUDtor(SPU* spu) {
 int SPUDump(SPU* spu) {
 	printf(GREEN("SPU") "[" BLUE("%p") "] {\n", spu);
 	
-	printf("\t");
-	StackDump(spu->stack);
-	
-	printf("\t" GREEN("Registers "));
-	for (unsigned i = 0; i < REG_COUNT; i++)
-		CWDump(spu->registers[i]);
+	printf("\t Stack: ");
+	if (spu->stack->size) {
+	    printf(">" YELLOW("%.2lf") "<", spu->stack->data[0]);
+	    
+	    for (unsigned i = 1; i < spu->stack->size && i < DUMP_LIMIT; i++)
+	        printf(" %.2lf", spu->stack->data[i]);
+	} else {
+	    printf("empty");
+	}
 	printf("\n");
 	
-	printf("\t");
-	MemDump(spu->code);
+	printf("\t Registers:");
+	for (unsigned i = 0; i < REG_COUNT && i < DUMP_LIMIT; i++)
+		printf(" %s: %.2lf;", RegStr(i), spu->regs[i]);
+	printf("\n");
+	
+	unsigned shift = 0;
+	if (spu->ip > DUMP_LIMIT/2)
+	    shift = spu->ip - DUMP_LIMIT/2;
+	
+	printf("\t Code:");
+	for (unsigned i = shift; i < spu->code_sz && i < DUMP_LIMIT + shift; i++)
+	    if (i == spu->ip)
+	        printf( YELLOW(" %2X"), spu->code[i] );
+	    else
+	        printf(" %2X", spu->code[i]);
+	printf("\n");
 	
 	printf("}\n");
 	
@@ -74,6 +91,9 @@ int SPUDump(SPU* spu) {
 
 
 int SPULoad(SPU* spu, const char* filename) {
+	assert(spu);
+	assert(filename);
+
 	FILE* f = fopen(filename, "rb");
 	if (!f) {
 		FATAL("SPULoad: Error opening file");
@@ -89,86 +109,97 @@ int SPULoad(SPU* spu, const char* filename) {
 
 
 int fSPULoad(SPU* spu, FILE* file) {
-	assert(spu);
-	assert(file);
-
-	return ReadBytecodeMem(spu->code, file);
+    assert(spu);
+    assert(file);
+    
+    return LoadBytecode(spu->code, &(spu->code_sz), file);
 }
 
 
-int SPUStackPush(SPU* spu, code_word val) {
-	return StackPush(spu->stack, &val);
+int CodeGetCmd(SPU* spu, char* cmd) {
+    assert(spu);
+    
+    if (spu->ip >= spu->code_sz)
+        return -1;
+    
+    *cmd = spu->code[spu->ip];
+    spu->ip += 1;
+    
+    return 0;
 }
 
-// int getArg() { *(double*)code =
 
- 
-// char* code = loadBinary()
-// SPUExecute(code)
-
-int SPUStackPop(SPU* spu, code_word* val) {
-	return StackPop(spu->stack, val);
+int CodeGetArg(SPU* spu, double* arg) {
+    assert(spu);
+    
+    if (spu->ip + sizeof(double) - 1 >= spu->code_sz)
+        return -1;
+    
+    *arg = *((double*) (spu->code + spu->ip));
+    
+    spu->ip += sizeof(double);
+    
+    return 0;
 }
 
 
-int SPUStep(SPU* spu) {
-	code_word cmd = {0};
-	RELAY( MemRead(spu->code, &cmd) );
-	MemShift(spu->code, 1);
+STEP_RES SPUStep(SPU* spu) {
+    #define HALT return HALTED
+
+	char opcode = 0;
+	if (CodeGetCmd(spu, &opcode)) HALT;
 	
-	PAR_T pt = CWPar(cmd);
+	ARG_TYPE argt = OPGetArg(opcode);
+	unsigned cmdt = OPGetCmd(opcode);
 	
-	code_word arg = {0};
-	if (pt) {
-		RELAY( MemRead(spu->code, &arg) );
-		MemShift(spu->code, 1);
-		
+	double arg = 0;
+	double* reg = NULL;
+	
+	if (argt == IMM || argt == REG)
+	    if (CodeGetArg(spu, &arg)) HALT;
+	
+	if (argt == REG) {
+	    int num = arg;
+	    if (num < 0 || num >= REG_COUNT) HALT;
+	    
+	    reg = &(spu->regs[num]);
 	}
 	
-	if (pt == REGISTER &&
-		( arg.iarg < 0 || arg.iarg >= REG_COUNT))
-		return -1;
+	double to_push[MX_CMD_BUF] = {};
+	double poped[MX_CMD_BUF] = {};
 	
-	// remove PT
-	// IARG?
-	// 
-	switch ( CWIns(cmd) ) {
-		#define HALT return 1;
-		#define ARG arg
-		#define ARG_T code_word
-		#define ARG_ZERO {0}
-		#define PT pt
-		#define A_REG REGISTER
-		#define A_LIT LITERAL
-		#define ERR(t) FATAL(t)
-		#define WARN(t) WARNING(t)
-		#define CANT return -1
-		#define DO_PUSH(val) SPUStackPush(spu, (val))
-		#define DO_POP(val) SPUStackPop(spu, &(val))
-		#define REG(arg) spu->registers[arg.iarg]
-		#define I(arg) (arg).iarg
-		#define F(arg) (arg).farg
-		#define IARG(arg) (code_word) { .iarg = (arg) }
-		#define FARG(arg) (code_word) { .farg = (arg) }
-		
-		
-		
-		#define DC(num, name, has_arg, ...) case CMD_ ## name:  \
-												{               \
-													__VA_ARGS__ \
-												} break;
-		#include "commands.h"
-		default:
-			FATAL("SPU reached default case!");
-			return -1;
-	}
 	
-	return 0;
+	#define GREG (*reg)
+		
+	#define DEF_CMD(NUM, NAME, ARG, POPS, PUSHS, ...) if (cmdt == NUM && argt == ARG)                       \
+											          {                                                     \
+											              for (unsigned i = 0; i < POPS; i++) {             \
+											                  int res = StackPop(spu->stack, &poped[i]);    \
+											                  if (res) HALT;                                \
+											              }                                                 \
+												          __VA_ARGS__                                       \
+												          for (unsigned i = 0; i < PUSHS; i++) {            \
+											                  int res = StackPush(spu->stack, to_push[i]);  \
+											                  if (res) HALT;                                \
+											              }                                                 \
+											          } else
+	#include "cmd_def.h"
+	
+	/* else */ if (1) {
+		FATAL("SPU reached default case!");
+		HALT;
+    }
+	
+	#undef DEF_CMD
+	#undef GREG
+	#undef HALT
+	
+	return NOT_HALTED;
 }
 
 
 int SPUExec(SPU* spu) {
-	while ( !SPUStep(spu) )
+	while ( SPUStep(spu) == NOT_HALTED )
 		SPUDump(spu);
 		
 	return 0;
@@ -189,5 +220,3 @@ int main() {
 	
 	SPUDtor(spu);
 }
-
-// int SPUExecute

@@ -1,35 +1,18 @@
-#ifndef _BYTECODE_H_
-#define _BYTECODE_H_
+#ifndef _OPCODE_H_
+#define _OPCODE_H_
 
-#include "instructions.h"
-
-union code_word {
-	double farg;
-	long int iarg;
-	char inst[8];
+enum ARG_TYPE {
+	NOP,
+	IMM,
+	REG
 };
 
-// struct opcode
-// {
-//     int code : 6;
-//     int arg_type : 2;
-// }
+// Format:
+// 0  1  0  1  1  1  1  1
+//   REG   \------------|
+//      IMM     CMD
 
-// typedef int64_t reg_type
+ARG_TYPE OPGetArg(char opcode);
+unsigned OPGetCmd(char opcode);
 
-const unsigned CW_SZ = sizeof(code_word);
-
-enum PAR_T {
-	NONE,
-	LITERAL,
-	REGISTER
-};
-
-code_word CWCtor(INSTRUCTIONS i, PAR_T p);
-
-void CWDump(code_word);
-
-INSTRUCTIONS CWIns(code_word cw);
-PAR_T CWPar(code_word cw);
-
-#endif /* _BYTECODE_H_ */
+#endif /* _OPCODE_H_ */
