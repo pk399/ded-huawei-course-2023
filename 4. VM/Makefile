@@ -1,17 +1,20 @@
 CC = g++
 CFLAGS = -O3
 
-all: vm asm
+INCLUDE = ../common/include
+LIB = ../common/lib
+
+all: spu asm
 
 clean:
 	rm *.o
-	rm vm asm
+	rm spu asm
 	
-vm: func_stack.o memory.o bytecode.o cmd.o
-	$(CC) $(CFLAGS) vm.c $^ -o $@
+spu: reg.o bcfile.o opcode.o
+	$(CC) $(CFLAGS) spu.c $^ -L$(LIB) -lstack -I$(INCLUDE) -o $@
 
-asm: memory.o tiny_onegin.o cmd.o bytecode.o
-	$(CC) $(CFLAGS) assembler.c $^ -o $@
+asm: bcfile.o opcode.o
+	$(CC) $(CFLAGS) asm.c $^ -o $@
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) $< -o $@
