@@ -4,8 +4,8 @@
 #define CANARY
 #define HASH
 
-typedef int stack_t;
-#define STACKTFORMAT "%d"
+typedef double stack_t;
+#define STACKTFORMAT "%lf"
 const stack_t STACK_POISON_VALUE = -3;
 
 const size_t STACK_DEFAULT_CAPACITY = 64;
