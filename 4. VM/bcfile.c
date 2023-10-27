@@ -1,25 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#include "memory.h"
-#include "instructions.h"
-#include "bytecode.h"
 #include "error.h"
 
 #include "bcfile.h"
 
 
-int WriteBytecode(FILE* file, Memory* mem) {
+int WriteBytecode(FILE* file, char* arr, unsigned sz); {
 	assert(file);
-	assert(mem);
-	
-	if ( mem->elem_size != sizeof(code_word) ) {
-		FATAL("Memory elem_size must hold code_word (from bytecode.h)");
-		return -1;
-	}
+	assert(arr);
 
-	unsigned written = 0;	
+	unsigned written = 0;
+		
 	written = fwrite(&MAGIC, sizeof(MAGIC), 1, file);
 	if (written != 1) {
 		FATAL("Error writing magic to file");
@@ -32,14 +26,14 @@ int WriteBytecode(FILE* file, Memory* mem) {
 		return -1;
 	}
 	
-	written = fwrite(&mem->size, sizeof(mem->size), 1, file);
+	written = fwrite(&sz, sizeof(sz), 1, file);
 	if (written != 1) {
 		FATAL("Error writing size to file");
 		return -1;
 	}
 	
-	written = fwrite(mem->bytes, sizeof(code_word), mem->size, file);
-	if (written != mem->size) {
+	written = fwrite(arr, sizeof(char), sz, file);
+	if (written != sz) {
 		FATAL("Error writing to file");
 		//printf("__func__ : Error writing to file (%u/%u written)\n", written, mem->size);
 		// TODO: have parameters in FATAL macro
@@ -50,25 +44,22 @@ int WriteBytecode(FILE* file, Memory* mem) {
 }
 
 
-int ReadBytecodeMem(Memory* mem, FILE* file) {
+int LoadBytecode(char* arr, unsigned* sz, FILE* file) {
 	assert(file);
-	assert(mem);
-	
-	if ( mem->elem_size != sizeof(code_word) ) {
-		FATAL("Memory elem_size must == sizeof code_word (from bytecode.h)");
-		return -1;
-	}
-
+	assert(arr);
+    
+    unsigned read = 0;
+    
 	unsigned magic = 0;
-	fread(&magic, 1, sizeof(magic), file);
-	if (memcmp(&magic, &MAGIC, sizeof(magic))) {
+	read = fread(&magic, 1, sizeof(magic), file);
+	if (read != 1 || memcmp(&magic, &MAGIC, sizeof(magic))) {
 		FATAL("Magic number mismatch");
 		return -1;
 	}
 	
 	unsigned version = 0;
-	fread(&version, 1, sizeof(version), file);
-	if (version != VERSION) {
+	read = fread(&version, 1, sizeof(version), file);
+	if (read != 1 || version != VERSION) {
 		FATAL("Version mismatch");
 		//printf("__func__: Version mismatch (%u != %u)\n", version, VERSION);
 		// TODO: FATAL params
@@ -76,15 +67,15 @@ int ReadBytecodeMem(Memory* mem, FILE* file) {
 	}
 	
 	unsigned file_size = 0;
-	fread(&file_size, 1, sizeof(file_size), file);
-	if (!file_size) {
+	read = fread(&file_size, 1, sizeof(file_size), file);
+	if (read != 1 || !file_size) {
 		FATAL("File size is 0");
 		return -1;
 	}
 	
-	if ( MemResize(mem, file_size) ) return (FATAL("Error resizing memory"), -1);
+	if ( realloc(arr, file_size) ) return (FATAL("Error resizing array"), -1);
 	
-	unsigned read = fread(mem->bytes, sizeof(code_word), file_size, file);
+	read = fread(arr, sizeof(char), file_size, file);
 	if (read != file_size) {
 		FATAL("Error reading file");
 		//printf("__func__: Error reading file (%u/%u read)\n", read, file_size);
@@ -94,21 +85,3 @@ int ReadBytecodeMem(Memory* mem, FILE* file) {
 	
 	return 0;
 }
-
-
-Memory* ReadBytecode(FILE* file) {
-	assert(file);
-
-	Memory* new_mem = MemCtor(sizeof(code_word));
-	if (!new_mem) {
-		FATAL("Error constructing memory");
-		return NULL;
-	}
-	
-	if ( ReadBytecodeMem(new_mem, file) ) {
-		MemDtor(new_mem);
-		return NULL;
-	}
-	
-	return new_mem;
-} 

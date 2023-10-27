@@ -3,19 +3,16 @@
 
 #include <stdio.h>
 
-#include "memory.h"
-
 // File format:
 // 1. unsigned - Magic number
 // 2. unsigned - Version
 // 3. unsigned - Filesize
 
 const unsigned MAGIC   = 69236456;
-const unsigned VERSION = 13370001;
+const unsigned VERSION = 13370002;
 
 
-int WriteBytecode(FILE*, Memory*);
-Memory* ReadBytecode(FILE*);
-int ReadBytecodeMem(Memory*, FILE*);
+int WriteBytecode(FILE*, char*, unsigned sz);
+int LoadBytecode(char*, unsigned* sz, FILE*);
 
 #endif /* _BCFILE_H_ */
