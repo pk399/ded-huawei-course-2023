@@ -70,6 +70,18 @@ int SPUDtor(SPU* spu) {
 int SPUDump(SPU* spu) {
 	printf(GREEN("SPU") "[" BLUE("%p") "] {\n", spu);
 	
+	printf("\t Call stk: ");
+	if (spu->call_stk->size) {
+	    printf(">" YELLOW("%.2lf") "<", spu->call_stk->data[spu->call_stk->size - 1]);
+	    
+	    for (int i = spu->call_stk->size - 2; i >= 0 && spu->call_stk->size - i < DUMP_LIMIT; i--)
+	        printf(" %.2lf", spu->call_stk->data[i]);
+	} else {
+	    printf("empty");
+	}
+	printf("\n");
+	
+	
 	printf("\t Stack: ");
 	if (spu->stack->size) {
 	    printf(">" YELLOW("%.2lf") "<", spu->stack->data[spu->stack->size - 1]);
