@@ -235,7 +235,7 @@ STEP_RES SPUStep(SPU* spu) {
 
 int SPUExec(SPU* spu) {
 	while ( SPUStep(spu) == NOT_HALTED )
-		SPUDump(spu);
+		;//SPUDump(spu);
 		
 	return 0;
 }
