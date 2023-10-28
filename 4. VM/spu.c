@@ -174,6 +174,7 @@ STEP_RES SPUStep(SPU* spu) {
 	
 	
 	#define GREG (*reg)
+	#define IP spu->ip
 		
 	#define DEF_CMD(NUM, NAME, ARG, POPS, PUSHS, ...) if (cmdt == NUM && argt == ARG)                       \
 											          {                                                     \

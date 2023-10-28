@@ -10,11 +10,11 @@ clean:
 	rm *.o
 	rm spu asm
 	
-spu: reg.o bcfile.o opcode.o
-	$(CC) $(CFLAGS) spu.c $^ -L$(LIB) -lstack -I$(INCLUDE) -o $@
+spu: spu.c reg.o bcfile.o opcode.o
+	$(CC) $(CFLAGS) $^ -L$(LIB) -lstack -I$(INCLUDE) -o $@
 
-asm: bcfile.o opcode.o
-	$(CC) $(CFLAGS) asm.c $^ -o $@
+asm: asm.c bcfile.o opcode.o
+	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) $< -o $@

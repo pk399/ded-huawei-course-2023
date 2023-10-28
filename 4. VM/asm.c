@@ -11,11 +11,20 @@
 
 const unsigned CODE_SZ = 1000000; // One million dh
 const unsigned LINE_SZ = 1000;
+const unsigned MARKER_SZ = 1000;
+
+
+struct Marker {
+    char* name;
+    int pointer;
+};
 
 
 // Global vars
 char code[CODE_SZ] = {};
 unsigned ip = 0;
+Marker markers[MARKER_SZ] = {};
+unsigned mp = 0;
 
 
 // https://stackoverflow.com/questions/5820810/case-insensitive-string-comparison-in-c
@@ -25,6 +34,37 @@ int MyStricmp(const char* a, const char* b) {
         if (d != 0 || !*a)
             return d;
     }
+}
+
+
+int MarkerInsert(char* marker) {
+    assert(marker);
+    
+    printf("Inserting marker %s(%u)\n", marker, ip);
+    
+    if (mp >= MARKER_SZ)
+        return -1;
+    
+    char* str = (char*) malloc(strlen(marker) + 1);
+    if (!str) return -1;
+    strcpy(str, marker);
+    
+    markers[mp++] = (Marker) {str, (int) ip};
+    
+    return 0;
+}
+
+
+int MarkerFind(char* marker) {
+    for (unsigned i = 0; i < mp; i++) {
+        Marker m = markers[i];
+        if ( !strcmp(m.name, marker) ) {
+            printf("Found marker %s(%d)\n", m.name, m.pointer);
+            return m.pointer;
+        }
+    }
+    
+    return -1;
 }
 
 
@@ -40,9 +80,15 @@ double ParseParameter(char* str, ARG_TYPE *argt) {
     
     #include "reg_def.h"
     #undef DEF_REG
-    /* else */ if (0) ;   
-    	
-	*argt = IMM;
+    /* else */ if (0) ; 
+    
+    *argt = IMM;
+    
+    int mrk = MarkerFind(str);
+    if ( mrk != -1 ) {
+        return mrk;
+    } 
+    
 	return atof(str);
 }
 
@@ -78,8 +124,19 @@ void ParseFile(FILE* file) {
 		if (comment)
 			*comment = '\0';
 			
-		printf("After removing comment: |%s|\n", line);
-			
+		printf("After removing comment: |%s|\n", line);    
+	    
+	    char* marker = strchr(line, ':');
+	    if (marker) { // Has marker
+	        printf("Parsing as marker\n");
+	        *marker = '\0';
+	        if ( MarkerInsert(strtok(line, " \t\n")) ) {
+	            FATAL("Could not insert marker!!!\n");
+	        }
+	        
+	        continue;
+	    }
+	    
 		char* cmd_str = strtok(line, " \t\n");
 		if (!cmd_str)
 			continue;
@@ -122,11 +179,20 @@ printf("123123");
 printf("ARgc: %d", argc);
 printf("ARGS: %s\n", args[1]);
 	
-	FILE* in_file = fopen(args[1], "rt");
-	if (!in_file)
-		return -printf("Failed to open input file (%s)\n", args[1]);
+	for (int i = 0; i < 2; i++) {
+	    ip = 0;
+	    printf("===========\n");
+	    printf("   PASS %d \n", i + 1);	    
+	    printf("===========\n");	    
 	
-	ParseFile(in_file);
+	    FILE* in_file = fopen(args[1], "rt");
+	    if (!in_file)
+		    return -printf("Failed to open input file (%s)\n", args[1]);
+	    
+	    ParseFile(in_file);
+	    
+	    fclose(in_file);
+	}
 	
 	FILE* out_file = NULL;
 	if (argc < 3) {
@@ -141,7 +207,6 @@ printf("Picking out.bc\n");
 	ip = (ip > CODE_SZ) ? CODE_SZ : ip;
 	WriteBytecode(out_file, code, ip);
 	
-	fclose(in_file);
 	fclose(out_file);
 		
 	return 0;
