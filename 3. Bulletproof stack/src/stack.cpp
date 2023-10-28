@@ -242,7 +242,7 @@ RESULT StackPop(Stack* stk, stack_t* val) {
 		SyncHash(stk);
 	#endif
 
-    if (stk->size <= stk->capacity / SHRINK_WHEN) {
+    if (stk->size <= stk->capacity / SHRINK_WHEN && stk->capacity / SHRINK_BY >= STACK_DEFAULT_CAPACITY) {
         RESULT res = StackRealloc(stk, stk->capacity / SHRINK_BY);
         if (res)
             return res;
