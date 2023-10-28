@@ -39,6 +39,18 @@ SPU* SPUCtor() {
 	    return NULL;
 	}
 	
+	spu->call_stk = (Stack*) calloc(1, sizeof(Stack));
+	if (
+	    !spu->call_stk ||
+	    STACKCTOR(spu->call_stk)
+	   ) {
+	    free(spu->code);
+	    StackDtor(spu->stack);
+	    StackDtor(spu->call_stk);
+	    free(spu);
+	    return NULL;
+	}
+	
 	return spu;
 }
 
@@ -46,6 +58,7 @@ SPU* SPUCtor() {
 int SPUDtor(SPU* spu) {
 	if (spu) {
 		StackDtor(spu->stack);
+		StackDtor(spu->call_stk);
 		free(spu->code);
 		free(spu);
 	}
@@ -175,6 +188,8 @@ STEP_RES SPUStep(SPU* spu) {
 	
 	#define GREG (*reg)
 	#define IP spu->ip
+	#define CALLME(arg) if (StackPush(spu->call_stk, IP)) HALT; IP = (arg)
+	#define REN double tmp = 0.0; if (StackPop(spu->call_stk, &tmp)) HALT; IP = tmp
 		
 	#define DEF_CMD(NUM, NAME, ARG, POPS, PUSHS, ...) if (cmdt == NUM && argt == ARG)                       \
 											          {                                                     \
@@ -196,6 +211,9 @@ STEP_RES SPUStep(SPU* spu) {
     }
 	
 	#undef DEF_CMD
+	#undef REN
+	#undef CALLME
+	#undef IP
 	#undef GREG
 	#undef HALT
 	

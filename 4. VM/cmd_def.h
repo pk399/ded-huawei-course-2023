@@ -30,3 +30,6 @@ CND_JMP(18, JNE , !DEQ(a, b))
 #undef b
 #undef CND_JMP
 #undef DEQ
+
+DEF_CMD(19, CALL, IMM, 0, 0, { CALLME(arg); })
+DEF_CMD(20, RET , NOP, 0, 0, { REN; })

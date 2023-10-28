@@ -17,6 +17,8 @@ struct SPU {
 	unsigned ip;
 	char* code;
 	unsigned code_sz;
+	
+	Stack* call_stk;
 };
 
 
