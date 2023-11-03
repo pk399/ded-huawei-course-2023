@@ -4,7 +4,7 @@ CFLAGS = -O3
 
 INCLUDE = ../common/include
 
-list:
+list: list.c
 	$(CC) $(CFLAGS) list.c -o $@ -I$(INCLUDE)
 
 clean:
