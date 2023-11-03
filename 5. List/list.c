@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <colors.h>
 
@@ -124,6 +125,12 @@ int ListTextDump(const List* lst) {
             printf(   RED("vvvv"));
         else
             printf(       "    " );
+    }
+    printf("\n");
+    
+    printf("\t     ");
+    for (int i = 0; i < lst->capacity; i++) {
+        printf(BLUE(" %3d"), i);
     }
     printf("\n");
     
