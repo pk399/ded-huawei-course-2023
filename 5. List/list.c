@@ -6,34 +6,7 @@
 
 #include <colors.h>
 
-typedef int list_t;
-const list_t POISON = -1;
-#define LISTTF "%d"
-#define DUMPLISTTF "%3d"
-
-
-struct List {
-    list_t* data;
-    int* next;
-    int* prev;
-    
-    int head;
-    int tail;
-    
-    int free;
-    
-    int capacity;
-};
-
-
-
-List* ListCtor(int capacity);
-int ListResizeUp(List* lst, int new_cap);
-int ListValidate(const List* lst);
-int ListTextDump(const List* lst);
-int ListGraphDump(const List* lst);
-//int ListGraphTemplate(const char* filename, const List* lst, const char* template);
-int ListDtor(List* lst);
+#include "list.h"
 
 
 List* ListCtor(int capacity) {
@@ -42,24 +15,10 @@ List* ListCtor(int capacity) {
     List* lst = (List*) calloc(1, sizeof(List));
     if (!lst) return NULL;
     
-    capacity = 14; // DED example
-    
     if ( ListResizeUp(lst, capacity) ) {
         ListDtor(lst);
         return NULL;
     }
-    
-    // Example
-    int data[14] = {-1, 10, 20, 30, 40, 50, 60, -1, 80, -1, 45, -1, -1, -1};
-    for (int i=0; i < 14; i++) lst->data[i] = data[i];
-    int next[14] = { 0,  2,  3,  4, 10,  6,  8,  9,  0, 11,  5, 12, 13,  0};
-    for (int i=0; i < 14; i++) lst->next[i] = next[i];
-    int prev[14] = { 0,  0,  1,  2,  3, 10,  5, -1,  6, -1,  4, -1, -1, -1};
-    for (int i=0; i < 14; i++) lst->prev[i] = prev[i];
-    
-    lst->head = 1;
-    lst->tail = 8;
-    lst->free = 7;
     
     return lst;
 }
@@ -100,11 +59,9 @@ int ListResizeUp(List* lst, int new_cap) {
 int ListValidate(const List* lst) {
     if (!lst) return -1;
 
-    if ( !(lst->data && lst->next && lst->prev) ) return -1;
+    if ( !lst->data ) return -1;
 
-    if ( !(lst->capacity && lst->free) || lst->capacity < 0 || lst->free < 0 ) return -1;
-
-    if ( lst->head < 0 || lst->tail < 0 ) return -1;
+    if ( !(lst->capacity) || lst->capacity < 0 || lst->free < 0 ) return -1;
 
     // TODO: validate list sequence
     
@@ -119,9 +76,9 @@ int ListTextDump(const List* lst) {
     
     printf("\t     ");
     for (int i = 0; i < lst->capacity; i++) {
-        if (i == lst->head)
+        if (i == lst->next[0])
             printf( GREEN("vvvv"));
-        else if (i == lst->tail)
+        else if (i == lst->prev[0])
             printf(YELLOW("vvvv"));
         else if (i == lst->free)
             printf(   RED("vvvv"));
@@ -182,7 +139,7 @@ int ListGraphDump(const List* lst) {
     fprintf(f, "digraph {\n rankdir=LR;\n subgraph cluster {\nstyle=filled;\n color=lightgrey;\n label=\"List ultra mega\"\n");
     
     for (int i = 0; i < lst->capacity; i++) {
-        fprintf(f, " n%d[shape=\"Mrecord\", label=\"%d | <n> next(%d) | <p> prev(%d)\" ", i, i, lst->next[i], lst->prev[i]);
+        fprintf(f, " n%d[shape=\"Mrecord\", label=\"%d | " LISTTF " | <n> next(%d) | <p> prev(%d)\" ", i, i, lst->data[i], lst->next[i], lst->prev[i]);
         if (i == 0) fprintf(f, "color=\"purple\"");
         else if (lst->prev[i] == -1) fprintf(f, "color=\"lime\"");
         fprintf(f, "]\n");
@@ -202,9 +159,68 @@ int ListGraphDump(const List* lst) {
             fprintf(f, "n%d: <n> -> n%d [color=\"blue\"];\n", i, lst->next[i]);
     }
     
+    fprintf(f, "free -> n%d [color=\"green\"]\n", lst->free);
+    
     fprintf(f, "}\n");
     
     pclose(f);
+    return 0;
+}
+
+
+int ListInsert(List* lst, int idx, list_t elem) {
+    assert(lst);
+    assert(idx >= 0);
+    if (ListValidate(lst)) return -1;
+    
+    if (lst->free == 0)
+        if (ListResizeUp(lst, lst->capacity * 2)) return -1;
+    
+    int new_node = lst->free;
+    lst->free = lst->next[new_node];
+    
+    lst->prev[lst->next[idx]] = new_node;
+    lst->next[new_node] = lst->next[idx];
+    lst->prev[new_node] = idx;
+    lst->next[idx] = new_node;
+    lst->data[new_node] = elem;
+    
+    //lst->size++; No size yet
+    
+    return 0;
+}
+
+
+int ListRemove(List* lst, int idx) {
+    assert(lst);
+    assert(idx > 0);
+    if (ListValidate(lst)) return -1;
+    
+    lst->data[idx] = POISON;
+    lst->prev[lst->next[idx]] = lst->prev[idx];
+    lst->next[lst->prev[idx]] = lst->next[idx];
+    
+    lst->prev[idx] = -1;
+    lst->next[idx] = lst->free;
+    lst->free = idx;
+    
+    //lst->size--; No size yet
+    
+    return 0;
+}
+
+
+int ListSwap(List* lst, int idx1, int idx2) {
+    assert(lst);
+    
+    int temp = lst->next[idx1];
+    lst->next[idx1] = lst->next[idx2];
+    lst->next[idx2] = temp;
+    
+    temp = lst->prev[idx1];
+    lst->prev[idx1] = lst->prev[idx2];
+    lst->prev[idx2] = temp;
+    
     return 0;
 }
 
@@ -215,27 +231,10 @@ int ListDtor(List* lst) {
         if (lst->next) free(lst->next);
         if (lst->prev) free(lst->prev);
         
-        *lst = (List) {NULL, NULL, NULL, -1, -1, -1, -1};
+        *lst = (List) {NULL, NULL, NULL, -1, -1};
         
         free(lst);
     }
     
     return 0;
-}
-
-
-int MyPrintf() {
-    printf("213\n");
-    return 0;
-}
-
-
-int main() {
-    //ListGraphDump(NULL);
-    List* lst = ListCtor(16);
-    
-    //ListTextDump(lst);
-    ListGraphDump(lst);
-    
-    ListDtor(lst);
 }
