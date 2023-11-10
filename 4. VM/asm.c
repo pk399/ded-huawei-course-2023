@@ -7,7 +7,7 @@
 #include "bcfile.h"
 #include "error.h"
 #include "opcode.h"
-
+// Note: no focus on performance 
 
 const unsigned CODE_SZ = 1000000; // One million dh
 const unsigned LINE_SZ = 1000;
@@ -20,7 +20,7 @@ struct Marker {
 };
 
 
-// Global vars
+// Global vars (easy to implement)
 char code[CODE_SZ] = {};
 unsigned ip = 0;
 Marker markers[MARKER_SZ] = {};
@@ -68,13 +68,25 @@ int MarkerFind(char* marker) {
 }
 
 
-double ParseParameter(char* str, ARG_TYPE *argt) {
+double ParseParameter(char* str, Arg_t *argt) {
 	assert(str);
 	assert(strlen(str));
 	assert(argt);
 	
+	if (str[0] == '[') {
+	    argt->mem = 1;
+	    str += 1;
+	    char* bracket_pos = strchr(str, ']');
+	    if (bracket_pos) *bracket_pos = '\0';
+	    else /* do_nothing() */;
+	    
+	    printf("Encountered the memory arg...\n");
+	    printf("Here's without braces: |%s|\n", str);
+	}
+	
+	
 	#define DEF_REG(num, name) if ( !MyStricmp(str, #name) ) { \
-	                               *argt = REG;                \
+	                               argt->reg = 1;              \
 	                               return num;                 \
 	                           } else
     
@@ -82,12 +94,12 @@ double ParseParameter(char* str, ARG_TYPE *argt) {
     #undef DEF_REG
     /* else */ if (0) ; 
     
-    *argt = IMM;
+    argt->imm = 1;
     
     int mrk = MarkerFind(str);
     if ( mrk != -1 ) {
         return mrk;
-    } 
+    }
     
 	return atof(str);
 }
@@ -143,7 +155,7 @@ void ParseFile(FILE* file) {
 		
 		printf("Command: |%s|\n", cmd_str);
 		
-		ARG_TYPE argt = NOP;
+		Arg_t argt = { };
 
 		char* param_str = strtok(NULL, " \t\n");
 		printf("Parameter: |%s|\n", param_str);
@@ -154,10 +166,11 @@ void ParseFile(FILE* file) {
 			param = ParseParameter(param_str, &argt);
 	    }
 		
-		#define DEF_CMD(NUM, NAME, ARG, ...) if ( !MyStricmp(cmd_str, #NAME) && argt == ARG ) { \
-		                                        printf("Encountered %s(%s)\n", #NAME, #ARG);   \
+		// TODO: Maybe not just literally ignore the arg type
+		#define DEF_CMD(NUM, NAME, ...) if ( !MyStricmp(cmd_str, #NAME) ) {                    \
+		                                        printf("Encountered %s(type)\n", #NAME);       \
                                                 CodeWriteOP(OPCtor(NUM, argt));                \
-										        if (argt != NOP)                               \
+										        if (argt.imm || argt.reg)                      \
 										            CodeWritePar(param);                       \
 										    } else
 		
@@ -166,6 +179,7 @@ void ParseFile(FILE* file) {
 		/* else */ if (1) {
 			//WARNING("No match for on %s(%d) line %u was found!", cmd_str, argt, i+1);
 			WARNING("No match for command was found!");
+			#warning error // <- TODO: throw some error or something
 		}
 	}
 }
@@ -190,6 +204,7 @@ printf("ARGS: %s\n", args[1]);
 		    return -printf("Failed to open input file (%s)\n", args[1]);
 	    
 	    ParseFile(in_file);
+	    #warning do not reopen
 	    
 	    fclose(in_file);
 	}

@@ -9,7 +9,7 @@
 // 3. unsigned - Filesize
 
 const unsigned MAGIC   = 69236456;
-const unsigned VERSION = 13370004;
+const unsigned VERSION = 13370005;
 
 
 int WriteBytecode(FILE*, char*, unsigned sz);

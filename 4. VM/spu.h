@@ -5,8 +5,9 @@
 
 
 const unsigned DEFAULT_CODE_SIZE = 512;
+const unsigned MEMORY_SIZE = 10; // One side of a square
 const unsigned DUMP_LIMIT = 16;
-const unsigned MX_CMD_BUF = 8; // Max to_push, poped size
+const unsigned MX_CMD_BUF = 8; // Max to_push[], poped[] size
 
 
 struct SPU {
@@ -19,6 +20,8 @@ struct SPU {
 	unsigned code_sz;
 	
 	Stack* call_stk;
+	
+	double memory[MEMORY_SIZE * MEMORY_SIZE]; // memory.h legacy
 };
 
 

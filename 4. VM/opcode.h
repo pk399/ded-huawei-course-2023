@@ -1,20 +1,20 @@
 #ifndef _OPCODE_H_
 #define _OPCODE_H_
 
-enum ARG_TYPE {
-	NOP,
-	IMM,
-	REG
+struct Arg_t {
+	int imm;
+	int reg;
+	int mem;
 };
 
 // Format:
 // 0  1  0  1  1  1  1  1
 //   REG   \------------|
-//      IMM     CMD
+//MEM   IMM     CMD
 
-char OPCtor(unsigned num, ARG_TYPE argt);
+char OPCtor(unsigned num, Arg_t argt);
 
-ARG_TYPE OPGetArg(char opcode);
+Arg_t OPGetArg(char opcode);
 unsigned OPGetCmd(char opcode);
 
 #endif /* _OPCODE_H_ */

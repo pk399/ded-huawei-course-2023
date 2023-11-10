@@ -1,30 +1,23 @@
 #include "opcode.h"
 
 
-char OPCtor(unsigned num, ARG_TYPE argt) {
+char OPCtor(unsigned num, Arg_t argt) {
     char opcode = num & 0x1f;
     
-    switch (argt) {
-        case IMM:
-            opcode = opcode | (1 << 5);
-            break;
-        case REG:
-            opcode = opcode | (1 << 6);
-            break;
-    } 
+    if (argt.imm) opcode |= (1 << 5);
+    if (argt.reg) opcode |= (1 << 6);
+    if (argt.mem) opcode |= (1 << 7);
+    
     return opcode;
 }
 
 
-ARG_TYPE OPGetArg(char opcode) {
-    switch (opcode & 0x60) {
-        case (1 << 5):
-            return IMM;
-        case (1 << 6):
-            return REG;
-        default:
-            return NOP;
-    }
+Arg_t OPGetArg(char opcode) {
+    Arg_t res = {((opcode & (1 << 5)) != 0),
+                 ((opcode & (1 << 6)) != 0),
+                 ((opcode & (1 << 7)) != 0)};
+
+    return res;
 }
 
 

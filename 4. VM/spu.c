@@ -13,8 +13,8 @@
 
 #include "spu.h"
 
-// SPU operates with doubles
-// opcodes are chars
+// Note: SPU operates with doubles
+// Note: opcodes are chars
 
 // SPUExecute(Memory* code)
 
@@ -113,6 +113,18 @@ int SPUDump(SPU* spu) {
 	        printf(" %2X", spu->code[i]);
 	printf("\n");
 	
+	printf("\t Memory:\n");
+	for (int i = 0; i < MEMORY_SIZE; i++) {
+	    for (int j = 0; j < MEMORY_SIZE; j++) {
+	        if (fabs(spu->memory[i*MEMORY_SIZE + j]) < DBL_EPSILON) {
+	            printf("_");
+	        } else {
+	            printf(GREEN("#"));
+	        }
+	    }
+	    printf("\n");
+	}
+	
 	printf("}\n");
 	
 	return 0;
@@ -128,11 +140,11 @@ int SPULoad(SPU* spu, const char* filename) {
 		FATAL("SPULoad: Error opening file");
 		return -1;
 	}
-	
+
 	int res = fSPULoad(spu, f);
-	
+
 	fclose(f);
-	
+
 	return res;
 }
 
@@ -178,32 +190,60 @@ STEP_RES SPUStep(SPU* spu) {
 	char opcode = 0;
 	if (CodeGetCmd(spu, &opcode)) HALT;
 	
-	ARG_TYPE argt = OPGetArg(opcode);
+	Arg_t    argt = OPGetArg(opcode);
 	unsigned cmdt = OPGetCmd(opcode);
 	
-	double arg = 0;
-	double* reg = NULL;
+	double orig_arg = 0; // Just for holding memory
+	double* arg = &orig_arg;
 	
-	if (argt == IMM || argt == REG)
-	    if (CodeGetArg(spu, &arg)) HALT;
+	// Note: This is a little bit strange,
+	// Note: but here's how it works:
+	// Note: 0 - NOP, 1 - RED, 2 - WRT
+	// Note: Every RED is a NOP
+	// Note: And every WRT is a RED and a NOP
+	// Note: I think this is sensible
+	int arg_level = 0; 
+
+	// TODO: Check the case when argt.mem = 1 and argt.imm = argt.reg = 0
+	if (argt.mem || argt.imm || argt.reg) {	
+	    if (CodeGetArg(spu, arg)) HALT;
+	    
+	    arg_level = 1;
+	}
 	
-	if (argt == REG) {
-	    int num = arg;
+	if (argt.reg) {
+	    int num = *arg;
 	    if (num < 0 || num >= REG_COUNT) HALT;
 	    
-	    reg = &(spu->regs[num]);
+	    arg = &(spu->regs[num]);
+	    
+	    arg_level = 2;
+	}
+
+	if (argt.mem) {
+	    int num = *arg;
+	    if (num < 0 || num >= MEMORY_SIZE * MEMORY_SIZE) HALT;
+	    
+	    arg = &(spu->memory[num]);
+	    
+	    arg_level = 2;
 	}
 
 	double to_push[MX_CMD_BUF] = {};
 	double poped[MX_CMD_BUF] = {};
 	
 	
-	#define GREG (*reg)
+	#define NOP (arg_level >= 0)
+	#define RDD (arg_level >= 1)
+	#define WRT (arg_level >= 2)
+	
+	#define ARG (*arg)
 	#define IP spu->ip
 	#define CALLME(arg) if (StackPush(spu->call_stk, IP)) HALT; IP = (arg)
 	#define REN double tmp = 0.0; if (StackPop(spu->call_stk, &tmp)) HALT; IP = tmp
 		
-	#define DEF_CMD(NUM, NAME, ARG, POPS, PUSHS, ...) if (cmdt == NUM && argt == ARG)                       \
+	#warning ifs are slow
+	#define DEF_CMD(NUM, NAME, ARG, POPS, PUSHS, ...) if (cmdt == NUM && ARG)                               \
 											          {                                                     \
 											              for (unsigned i = 0; i < POPS; i++) {             \
 											                  int res = StackPop(spu->stack, &poped[i]);    \
@@ -226,8 +266,12 @@ STEP_RES SPUStep(SPU* spu) {
 	#undef REN
 	#undef CALLME
 	#undef IP
-	#undef GREG
+	#undef ARG
+	#undef WRT
+	#undef RDD
+	#undef NOP
 	#undef HALT
+	
 	
 	return NOT_HALTED;
 }
