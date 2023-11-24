@@ -4,6 +4,8 @@
 
 #include "tree.h"
 
+const unsigned BUF_SZ = 128; // Default size for temp buffers
+
 Node* op_new(OPERAND op) {
     Node* n = tree_new();
     if (!n) return NULL;
@@ -55,8 +57,24 @@ int _tree_check(const Node* n) {
     return 0;
 }
 
+void node2str(char* buf, unsigned sz, const Node* n) {
+    switch (n->type) {
+        case OP:
+            snprintf(buf, sz, "%s", op2str(n->op));
+            break;
+        case VAR:
+            snprintf(buf, sz, "x");
+            break;
+        case LIT:
+            snprintf(buf, sz, "%.2lf", n->lit);
+            break;
+        default:
+            snprintf(buf, sz, ":/");
+    }
+}
 
-int tree_dump(const Node* n) {
+
+int _tree_dump(const Node* n) {
     if (_tree_check(n)) return 1;
     
     if (!n) {
@@ -65,26 +83,26 @@ int tree_dump(const Node* n) {
     }
     
     printf("(");
-    if (tree_dump(n->left)) return 1;
+    if (_tree_dump(n->left)) return 1;
     
-    switch (n->type) {
-        case OP:
-            printf(" %s ", op2str(n->op));
-            break;
-        case VAR:
-            printf(" x ");
-            break;
-        case LIT:
-            printf(" %.2lf ", n->lit);
-            break;
-        default:
-            printf(" :/ ");
-    }
+    putchar(' ');
+    char buf[BUF_SZ] = {};
+    node2str(buf, BUF_SZ, n);
+    puts(buf);
+    putchar(' ');
     
-    if (tree_dump(n->right)) return 1;
+    if (_tree_dump(n->right)) return 1;
     printf(")");
     
     return 0;
+}
+
+
+int tree_dump(const Node* n) {
+    int res = _tree_dump(n);
+    putchar('\n');
+    
+    return res;
 }
 
 
@@ -149,8 +167,6 @@ Node* _tree_parse(const char** buf_ptr) {
         return NULL; // TODO: nil check???
     }
     buf++;
-
-    const unsigned BUF_SZ = 128;
     
     char token[BUF_SZ] = {};
     _next_token(&buf, token, BUF_SZ);
@@ -181,6 +197,30 @@ Node* tree_parse(const char* buf) {
 }
 
 
-int tree_export(char*, unsigned sz, Node*) {
-    return -1; // TODO
+#define SHPRINTF(buf, sz, ...) if (*(sz) != 0) {int tmp = snprintf(*(buf), *(sz), __VA_ARGS__); *(buf) += tmp; if (tmp < *(sz) - 1) {*(sz) -= tmp;} else {*(sz) = 0;}}
+
+
+int _tree_export(char** buf, unsigned* sz, const Node* n) {
+    if (_tree_check(n)) return -1;
+    
+    if (!n) {
+        SHPRINTF(buf, sz, "nil");
+        return 0;
+    }
+    
+    char buf2[BUF_SZ] = {};
+    node2str(buf2, BUF_SZ, n);
+    SHPRINTF(buf, sz, "(%s ", buf2);
+    
+    _tree_export(buf, sz, n->left);
+    SHPRINTF(buf, sz, " ");
+    _tree_export(buf, sz, n->right);
+    
+    SHPRINTF(buf, sz, ")");
+    
+    return 0;
+}
+
+int tree_export(char* buf, unsigned sz, const Node* n) {
+    return _tree_export(&buf, &sz, n);
 }

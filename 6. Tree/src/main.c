@@ -12,11 +12,14 @@ int main() {
     fread(buf, 1, 1024, f);
     fclose(f);
     
-    printf("Read: [%s]", buf);
+    printf("Read: [%s]\n", buf);
     
     Node* n = tree_parse(buf);
     
-    tree_dump(n);
+    sprintf(buf, "aboba was here");
+    
+    tree_export(buf, 1024, n);
+    printf("Export: [%s]\n", buf);
     
     tree_delete(n);
 }

@@ -29,9 +29,10 @@ Node* lit_new(double lit);
 
 Node* tree_new();
 int tree_dump(const Node*);
+void node2str(char* buf, unsigned sz, const Node*);
 int tree_delete(Node*);
 
 Node* tree_parse(const char* buf);
-int tree_export(char*, unsigned sz, Node*);
+int tree_export(char* buf, unsigned sz, const Node*);
 
 #endif /* _TREE_H_ */
