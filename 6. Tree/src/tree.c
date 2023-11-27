@@ -4,7 +4,7 @@
 
 #include "tree.h"
 
-const unsigned BUF_SZ = 128; // Default size for temp buffers
+const unsigned BUF_SZ = 10000;//128; // Default size for temp buffers
 
 Node* op_new(OPERAND op) {
     Node* n = tree_new();
@@ -218,9 +218,111 @@ int _tree_export(char** buf, unsigned* sz, const Node* n) {
     
     SHPRINTF(buf, sz, ")");
     
-    return 0;
+    return 0; // TODO: return is broken
 }
+
 
 int tree_export(char* buf, unsigned sz, const Node* n) {
     return _tree_export(&buf, &sz, n);
+}
+
+
+int _tree_latex(char** buf, unsigned* sz, const Node* n) {
+    if (_tree_check(n)) return 1;
+    
+    if (!n) {
+        SHPRINTF(buf, sz, "Naf");
+        return 1;
+    }
+    
+    switch (n->type) {
+        case LIT:
+            SHPRINTF(buf, sz, "%.2lf", n->lit);
+            break;
+        case VAR:
+            SHPRINTF(buf, sz, "x");
+            break;
+        case OP:
+            switch (n->op) {
+                case ADD:
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, " + ");
+                    _tree_latex(buf, sz, n->right);
+                    break;
+                case SUB:
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, " - ");
+                    _tree_latex(buf, sz, n->right);
+                    break;
+                case MUL:
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, " * ");
+                    _tree_latex(buf, sz, n->right);
+                    break;
+                case DIV:
+                    SHPRINTF(buf, sz, "\\frac{");
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, "}{");
+                    _tree_latex(buf, sz, n->right);
+                    SHPRINTF(buf, sz, "}");
+                    break;
+                case SQRT:
+                    SHPRINTF(buf, sz, "\\sqrt{");
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, "}");
+                    break;
+                case SIN:
+                    SHPRINTF(buf, sz, "sin(");
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, ")");
+                    break;
+                case COS:
+                    SHPRINTF(buf, sz, "cos(");
+                    _tree_latex(buf, sz, n->left);
+                    SHPRINTF(buf, sz, ")");
+                    break;
+                case PI:
+                    SHPRINTF(buf, sz, "\\pi");
+                    break;
+                default:
+                    SHPRINTF(buf, sz, ":/ (op)");
+            }
+            break;
+        default:
+            SHPRINTF(buf, sz, ":/");
+    }
+    
+    return 0;
+}
+
+
+int tree_latex(char* buf, unsigned sz, const Node* n) {
+    SHPRINTF(&buf, &sz, "\\documentclass[12pt, a4paper]{article}\n\\begin{document}\n$$ ");
+    int res = _tree_latex(&buf, &sz, n);
+    SHPRINTF(&buf, &sz, " $$ \n\\end{document}");
+    
+    return res;
+}
+
+
+void latex2pdf(const char* filename, const char* buf) { // TODO: Move into separate file?
+    char buf2[BUF_SZ] = {};
+    
+    snprintf(buf2, BUF_SZ, "%s.tex", filename);
+    FILE* f = fopen(buf2, "wt");
+    if (!f) return; // TODO: -1
+    fwrite(buf, 1, strlen(buf), f);
+    fclose(f);
+
+    snprintf(buf2, BUF_SZ, "pdflatex %s.tex", filename);
+    f = popen(buf2, "r");
+    if (!f) return;
+    // Read, so the process runs, and doesn't block
+    fread(buf2, 1, BUF_SZ, f);
+    if (pclose(f)) return;
+    
+    snprintf(buf2, BUF_SZ, "rm %s.tex %s.log %s.aux", filename, filename, filename);
+    f = popen(buf2, "r");
+    if (!f) return;
+    if (pclose(f)) return;
 }

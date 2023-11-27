@@ -18,8 +18,10 @@ int main() {
     
     sprintf(buf, "aboba was here");
     
-    tree_export(buf, 1024, n);
+    tree_latex(buf, 1024, n);
     printf("Export: [%s]\n", buf);
+    
+    latex2pdf("output", buf);
     
     tree_delete(n);
 }

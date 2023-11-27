@@ -35,4 +35,7 @@ int tree_delete(Node*);
 Node* tree_parse(const char* buf);
 int tree_export(char* buf, unsigned sz, const Node*);
 
+int tree_latex(char* buf, unsigned sz, const Node*);
+void latex2pdf(const char* filename, const char* buf);
+
 #endif /* _TREE_H_ */
