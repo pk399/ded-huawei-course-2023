@@ -7,7 +7,7 @@
 int main() {
     char buf[1024] = {};
     
-    FILE* f = fopen("1.tree", "rt");
+    FILE* f = fopen("2.tree", "rt");
     assert(f);
     fread(buf, 1, 1024, f);
     fclose(f);

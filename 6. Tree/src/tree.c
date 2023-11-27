@@ -294,6 +294,13 @@ int _tree_latex(char** buf, unsigned* sz, const Node* n, unsigned prev_prio) {
                 case PI:
                     SHPRINTF(buf, sz, "\\pi");
                     break;
+                case POW:
+                    LEFT(POW);
+                    SHPRINTF(buf, sz, "^{");
+                    LR(POW);
+                    SHPRINTF(buf, sz, "}");
+                    RBRACE(POW);
+                    break;
                 default:
                     SHPRINTF(buf, sz, ":/ (op)");
             }

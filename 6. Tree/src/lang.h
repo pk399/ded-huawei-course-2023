@@ -3,6 +3,12 @@
 
 const unsigned NULL_PRIO = 0;
 
+// To add a new op:
+// 1. enum
+// 2. op2str & str2op
+// 3. op_prio
+// 4. tree_latex
+
 enum OPERAND {
     VOO,
     ADD,
@@ -12,7 +18,8 @@ enum OPERAND {
     SQRT,
     SIN,
     COS,
-    PI
+    PI,
+    POW
 };
 
 const char* op2str(OPERAND);

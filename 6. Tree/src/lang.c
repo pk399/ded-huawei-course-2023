@@ -13,6 +13,7 @@ const char* op2str(OPERAND op) {
         case SIN:  return "sin";
         case COS:  return "cos";
         case PI:   return "pi";
+        case POW:  return "pow";
         default:   return ":/";
     }
 }
@@ -27,6 +28,7 @@ OPERAND str2op(const char* c) {
     if (!strcmp(c, "sin")) return SIN;
     if (!strcmp(c, "cos")) return COS;
     if (!strcmp(c, "pi")) return PI;
+    if (!strcmp(c, "pow")) return POW;
     
     return VOO;
 }
@@ -37,6 +39,7 @@ unsigned op_prio(OPERAND op) {
         case ADD: return 3;
         case SUB: return 2;
         case MUL: return 4;
+        case POW: return 5;
         case DIV:
         case SQRT:
         case SIN:
