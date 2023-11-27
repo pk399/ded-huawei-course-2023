@@ -17,7 +17,7 @@ Node* op_new(OPERAND op) {
 }
 
 
-Node* var_new(/* TODO: multiples var support */) {
+Node* var_new(/* TODO: multiple var support */) {
    Node* n = tree_new();
    if (!n) return NULL;
    
@@ -226,8 +226,16 @@ int tree_export(char* buf, unsigned sz, const Node* n) {
     return _tree_export(&buf, &sz, n);
 }
 
+#define LL(op) _tree_latex(buf, sz, n->left, op_prio(op));
+#define LR(op) _tree_latex(buf, sz, n->right, op_prio(op));
+#define BRACE(op, br) if (prev_prio > op_prio(op) || (prev_prio == op_prio(op) && (op) == DIV)) {SHPRINTF(buf, sz, (br))}
+#define LBRACE(op) BRACE(op, "(")
+#define RBRACE(op) BRACE(op, ")")
 
-int _tree_latex(char** buf, unsigned* sz, const Node* n) {
+#define LEFT(op) LBRACE(op); LL(op)
+#define RIGHT(op) LR(op); RBRACE(op)
+
+int _tree_latex(char** buf, unsigned* sz, const Node* n, unsigned prev_prio) {
     if (_tree_check(n)) return 1;
     
     if (!n) {
@@ -245,40 +253,42 @@ int _tree_latex(char** buf, unsigned* sz, const Node* n) {
         case OP:
             switch (n->op) {
                 case ADD:
-                    _tree_latex(buf, sz, n->left);
+                    LEFT(ADD);
                     SHPRINTF(buf, sz, " + ");
-                    _tree_latex(buf, sz, n->right);
+                    RIGHT(ADD);
                     break;
                 case SUB:
-                    _tree_latex(buf, sz, n->left);
+                    LEFT(SUB);
                     SHPRINTF(buf, sz, " - ");
-                    _tree_latex(buf, sz, n->right);
+                    RIGHT(SUB);
                     break;
                 case MUL:
-                    _tree_latex(buf, sz, n->left);
+                    LEFT(MUL);
                     SHPRINTF(buf, sz, " * ");
-                    _tree_latex(buf, sz, n->right);
+                    RIGHT(MUL);
                     break;
                 case DIV:
+                    LBRACE(DIV);
                     SHPRINTF(buf, sz, "\\frac{");
-                    _tree_latex(buf, sz, n->left);
+                    LL(DIV);
                     SHPRINTF(buf, sz, "}{");
-                    _tree_latex(buf, sz, n->right);
+                    LR(DIV);
                     SHPRINTF(buf, sz, "}");
+                    RBRACE(DIV);
                     break;
                 case SQRT:
                     SHPRINTF(buf, sz, "\\sqrt{");
-                    _tree_latex(buf, sz, n->left);
+                    LL(SQRT);
                     SHPRINTF(buf, sz, "}");
                     break;
                 case SIN:
                     SHPRINTF(buf, sz, "sin(");
-                    _tree_latex(buf, sz, n->left);
+                    LL(SIN);
                     SHPRINTF(buf, sz, ")");
                     break;
                 case COS:
                     SHPRINTF(buf, sz, "cos(");
-                    _tree_latex(buf, sz, n->left);
+                    LL(COS);
                     SHPRINTF(buf, sz, ")");
                     break;
                 case PI:
@@ -298,7 +308,7 @@ int _tree_latex(char** buf, unsigned* sz, const Node* n) {
 
 int tree_latex(char* buf, unsigned sz, const Node* n) {
     SHPRINTF(&buf, &sz, "\\documentclass[12pt, a4paper]{article}\n\\begin{document}\n$$ ");
-    int res = _tree_latex(&buf, &sz, n);
+    int res = _tree_latex(&buf, &sz, n, NULL_PRIO);
     SHPRINTF(&buf, &sz, " $$ \n\\end{document}");
     
     return res;

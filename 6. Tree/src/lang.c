@@ -17,6 +17,7 @@ const char* op2str(OPERAND op) {
     }
 }
 
+
 OPERAND str2op(const char* c) {
     if (!strcmp(c, "add")) return ADD;
     if (!strcmp(c, "sub")) return SUB;
@@ -28,4 +29,21 @@ OPERAND str2op(const char* c) {
     if (!strcmp(c, "pi")) return PI;
     
     return VOO;
+}
+
+
+unsigned op_prio(OPERAND op) {
+    switch (op) {
+        case ADD: return 3;
+        case SUB: return 2;
+        case MUL: return 4;
+        case DIV:
+        case SQRT:
+        case SIN:
+        case COS:
+            return 1;
+        case PI:
+        default:
+            return NULL_PRIO;
+    }
 }
