@@ -1,0 +1,12 @@
+ADD , L + R
+SUB , L - R
+MUL , L * R
+DIV , \frac{L}{R}
+SQRT, \sqrt{L}
+SIN , sin(L)
+COS , cos(L)
+PI  , \pi
+POW , L^{R}
+LOG , \log_{L} R
+LN  , \ln L
+E   , e

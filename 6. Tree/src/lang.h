@@ -14,19 +14,11 @@ const unsigned NULL_PRIO = 0;
 // 8. _tree_check
 
 enum OPERAND {
-    VOO,
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    SQRT,
-    SIN,
-    COS,
-    PI,
-    POW,
-    LOG,
-    LN,
-    E
+    #define OP_DEF(id, name, ...) OP_ ## name = id,
+    #include "op.h"
+    #undef OP_DEF
+
+    VOO
 };
 
 const char* op2str(OPERAND);

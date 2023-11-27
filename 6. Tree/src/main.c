@@ -3,6 +3,9 @@
 #include <assert.h>
 
 #include "tree.h"
+#include "latex.h"
+#include "derivative.h"
+#include "eval.h"
 
 int main() {
     char buf[1024] = {};
@@ -18,7 +21,7 @@ int main() {
     
     tree_dump(n);
     
-    n = d(n);
+    n = derivative(n);
     
     tree_dump(n);
         

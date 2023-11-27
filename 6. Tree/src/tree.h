@@ -29,18 +29,12 @@ Node* tree_lit(double lit);
 
 Node* tree_new();
 Node* tree_copy(const Node*);
+int tree_check(const Node* n);
 int tree_dump(const Node*);
 void node2str(char* buf, unsigned sz, const Node*);
 int tree_delete(Node*);
 
 Node* tree_parse(const char* buf);
 int tree_export(char* buf, unsigned sz, const Node*);
-
-int tree_latex(char* buf, unsigned sz, const Node*);
-void latex2pdf(const char* filename, const char* buf);
-
-double eval(const Node* n, double x);
-
-Node* d(const Node*);
 
 #endif /* _TREE_H_ */
