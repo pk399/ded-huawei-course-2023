@@ -7,7 +7,7 @@
 int main() {
     char buf[1024] = {};
     
-    FILE* f = fopen("2.tree", "rt");
+    FILE* f = fopen("3.tree", "rt");
     assert(f);
     fread(buf, 1, 1024, f);
     fclose(f);
@@ -15,6 +15,8 @@ int main() {
     printf("Read: [%s]\n", buf);
     
     Node* n = tree_parse(buf);
+    
+    printf("Eval: %lf\n", eval(n, 2));
     
     sprintf(buf, "aboba was here");
     

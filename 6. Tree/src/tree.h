@@ -24,7 +24,7 @@ struct Node {
 };
 
 Node* op_new(OPERAND op);
-Node* var_new(/* TODO: multiples var support */);
+Node* var_new(/* TODO: multiple var support */);
 Node* lit_new(double lit);
 
 Node* tree_new();
@@ -37,5 +37,7 @@ int tree_export(char* buf, unsigned sz, const Node*);
 
 int tree_latex(char* buf, unsigned sz, const Node*);
 void latex2pdf(const char* filename, const char* buf);
+
+double eval(const Node* n, double x);
 
 #endif /* _TREE_H_ */

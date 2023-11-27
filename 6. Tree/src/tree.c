@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "tree.h"
 
@@ -226,14 +227,19 @@ int tree_export(char* buf, unsigned sz, const Node* n) {
     return _tree_export(&buf, &sz, n);
 }
 
-#define LL(op) _tree_latex(buf, sz, n->left, op_prio(op));
-#define LR(op) _tree_latex(buf, sz, n->right, op_prio(op));
+
+#define L(n) (n)->left
+#define R(n) (n)->right
+
+#define LL(op) _tree_latex(buf, sz, L(n), op_prio(op));
+#define LR(op) _tree_latex(buf, sz, R(n), op_prio(op));
 #define BRACE(op, br) if (prev_prio > op_prio(op) || (prev_prio == op_prio(op) && (op) == DIV)) {SHPRINTF(buf, sz, (br))}
 #define LBRACE(op) BRACE(op, "(")
 #define RBRACE(op) BRACE(op, ")")
 
 #define LEFT(op) LBRACE(op); LL(op)
 #define RIGHT(op) LR(op); RBRACE(op)
+
 
 int _tree_latex(char** buf, unsigned* sz, const Node* n, unsigned prev_prio) {
     if (_tree_check(n)) return 1;
@@ -334,7 +340,7 @@ void latex2pdf(const char* filename, const char* buf) { // TODO: Move into separ
     snprintf(buf2, BUF_SZ, "pdflatex %s.tex", filename);
     f = popen(buf2, "r");
     if (!f) return;
-    // Read, so the process runs, and doesn't block
+    // Read, so the process doesn't block
     fread(buf2, 1, BUF_SZ, f);
     if (pclose(f)) return;
     
@@ -342,4 +348,43 @@ void latex2pdf(const char* filename, const char* buf) { // TODO: Move into separ
     f = popen(buf2, "r");
     if (!f) return;
     if (pclose(f)) return;
+}
+
+
+#define EL(n) eval(L(n), x)
+#define ER(n) eval(R(n), x)
+
+
+double eval(const Node* n, double x) {
+    if (_tree_check(n)) return NAN;
+    
+    switch (n->type) {
+        case LIT:
+            return n->lit;
+        case VAR:
+            return x;
+        case OP:
+            switch (n->op) {
+                case ADD:
+                    return EL(n) + ER(n);
+                case SUB:
+                    return EL(n) - ER(n);
+                case MUL:
+                    return EL(n) * ER(n);
+                case DIV:
+                    return EL(n) / ER(n);
+                case SQRT:
+                    return sqrt(EL(n));
+                case SIN:
+                    return sin(EL(n));
+                case COS:
+                    return cos(EL(n));
+                case PI:
+                    return M_PI;
+                case POW:
+                    return pow(EL(n), ER(n));
+            }
+    }
+    
+    return NAN;
 }
