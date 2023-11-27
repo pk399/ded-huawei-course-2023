@@ -7,7 +7,11 @@ const unsigned NULL_PRIO = 0;
 // 1. enum
 // 2. op2str & str2op
 // 3. op_prio
-// 4. tree_latex
+// 4. node2str
+// 5. tree_latex
+// 6. eval
+// 7. d
+// 8. _tree_check
 
 enum OPERAND {
     VOO,
@@ -19,7 +23,10 @@ enum OPERAND {
     SIN,
     COS,
     PI,
-    POW
+    POW,
+    LOG,
+    LN,
+    E
 };
 
 const char* op2str(OPERAND);

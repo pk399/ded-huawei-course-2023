@@ -16,6 +16,12 @@ int main() {
     
     Node* n = tree_parse(buf);
     
+    tree_dump(n);
+    
+    n = d(n);
+    
+    tree_dump(n);
+        
     printf("Eval: %lf\n", eval(n, 2));
     
     sprintf(buf, "aboba was here");

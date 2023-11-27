@@ -23,11 +23,12 @@ struct Node {
     Node* right;
 };
 
-Node* op_new(OPERAND op);
-Node* var_new(/* TODO: multiple var support */);
-Node* lit_new(double lit);
+Node* tree_op(OPERAND op);
+Node* tree_var(/* TODO: multiple var support */);
+Node* tree_lit(double lit);
 
 Node* tree_new();
+Node* tree_copy(const Node*);
 int tree_dump(const Node*);
 void node2str(char* buf, unsigned sz, const Node*);
 int tree_delete(Node*);
@@ -39,5 +40,7 @@ int tree_latex(char* buf, unsigned sz, const Node*);
 void latex2pdf(const char* filename, const char* buf);
 
 double eval(const Node* n, double x);
+
+Node* d(const Node*);
 
 #endif /* _TREE_H_ */

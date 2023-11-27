@@ -14,6 +14,9 @@ const char* op2str(OPERAND op) {
         case COS:  return "cos";
         case PI:   return "pi";
         case POW:  return "pow";
+        case LOG:  return "log";
+        case LN:  return "ln";
+        case E:  return "e";
         default:   return ":/";
     }
 }
@@ -29,6 +32,9 @@ OPERAND str2op(const char* c) {
     if (!strcmp(c, "cos")) return COS;
     if (!strcmp(c, "pi")) return PI;
     if (!strcmp(c, "pow")) return POW;
+    if (!strcmp(c, "log")) return LOG;
+    if (!strcmp(c, "ln")) return LN;
+    if (!strcmp(c, "e")) return E;
     
     return VOO;
 }
@@ -40,12 +46,15 @@ unsigned op_prio(OPERAND op) {
         case SUB: return 2;
         case MUL: return 4;
         case POW: return 5;
+        case LOG:
+        case LN:
         case DIV:
         case SQRT:
         case SIN:
         case COS:
             return 1;
         case PI:
+        case E:
         default:
             return NULL_PRIO;
     }

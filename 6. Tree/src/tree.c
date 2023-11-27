@@ -7,7 +7,7 @@
 
 const unsigned BUF_SZ = 10000;//128; // Default size for temp buffers
 
-Node* op_new(OPERAND op) {
+Node* tree_op(OPERAND op) {
     Node* n = tree_new();
     if (!n) return NULL;
     
@@ -18,7 +18,7 @@ Node* op_new(OPERAND op) {
 }
 
 
-Node* var_new(/* TODO: multiple var support */) {
+Node* tree_var(/* TODO: multiple var support */) {
    Node* n = tree_new();
    if (!n) return NULL;
    
@@ -28,7 +28,7 @@ Node* var_new(/* TODO: multiple var support */) {
 }
 
 
-Node* lit_new(double lit) {
+Node* tree_lit(double lit) {
     Node* n = tree_new();
     if (!n) return NULL;
     
@@ -48,15 +48,50 @@ Node* tree_new() {
 
 
 int _tree_check(const Node* n) {
-    if (!n) return 0;
+    if (!n) return 1;
     
     if (n->left == n || n->right == n) return 1;
     if (n->right && n->right == n->left) return 1;
+    
+    if (n->type == OP) {
+        switch (n->op) {
+            case PI:
+            case E:
+                break;
+            case SQRT:
+            case SIN:
+            case COS:
+            case LN:
+                if (n->right) return 1;
+                if (!n->left) return 1;
+                break;
+            default:
+                if (!(n->right && n->left)) return 1;
+        }
+    } else {
+        if (n->right || n->left) return 1;
+    }
     
     // TODO: check the full tree
     
     return 0;
 }
+
+
+Node* tree_copy(const Node* n) {
+    if (_tree_check(n)) return NULL;
+    
+    Node* nn = tree_new();
+    if (!nn) return NULL;
+    
+    memcpy(nn, n, sizeof(Node));
+    
+    nn->left = tree_copy(n->left);
+    nn->right = tree_copy(n->right);
+    
+    return nn;
+}
+
 
 void node2str(char* buf, unsigned sz, const Node* n) {
     switch (n->type) {
@@ -76,12 +111,12 @@ void node2str(char* buf, unsigned sz, const Node* n) {
 
 
 int _tree_dump(const Node* n) {
-    if (_tree_check(n)) return 1;
-    
     if (!n) {
         printf("nil");
         return 0;
     }
+
+    if (_tree_check(n)) return 1;
     
     printf("(");
     if (_tree_dump(n->left)) return 1;
@@ -122,7 +157,7 @@ int tree_delete(Node* n) {
 void _skip_whitespace(const char** c) {
     while (**c == ' '  ||
            **c == '\t' ||
-           **c == '\n')
+           **c == '\n') // TODO isspace()
         (*c)++;
 }
 
@@ -176,11 +211,11 @@ Node* _tree_parse(const char** buf_ptr) {
     
     OPERAND op = str2op(token);
     if (op != VOO) {
-        n = op_new(op);
+        n = tree_op(op);
     } else if (!strcmp(token, "x")) {
-        n = var_new();
+        n = tree_var();
     } else {
-        n = lit_new(atof(token));
+        n = tree_lit(atof(token));
     }
     
     n->left = _tree_parse(&buf);
@@ -202,12 +237,12 @@ Node* tree_parse(const char* buf) {
 
 
 int _tree_export(char** buf, unsigned* sz, const Node* n) {
-    if (_tree_check(n)) return -1;
-    
     if (!n) {
         SHPRINTF(buf, sz, "nil");
         return 0;
-    }
+    }    
+    
+    if (_tree_check(n)) return -1;
     
     char buf2[BUF_SZ] = {};
     node2str(buf2, BUF_SZ, n);
@@ -242,14 +277,15 @@ int tree_export(char* buf, unsigned sz, const Node* n) {
 
 
 int _tree_latex(char** buf, unsigned* sz, const Node* n, unsigned prev_prio) {
-    if (_tree_check(n)) return 1;
-    
     if (!n) {
         SHPRINTF(buf, sz, "Naf");
         return 1;
-    }
+    }    
+    
+    if (_tree_check(n)) return 1;
     
     switch (n->type) {
+        //
         case LIT:
             SHPRINTF(buf, sz, "%.2lf", n->lit);
             break;
@@ -306,6 +342,20 @@ int _tree_latex(char** buf, unsigned* sz, const Node* n, unsigned prev_prio) {
                     LR(POW);
                     SHPRINTF(buf, sz, "}");
                     RBRACE(POW);
+                    break;
+                case LOG:
+                    LBRACE(LOG);
+                    SHPRINTF(buf, sz, "\\log_{");
+                    LL(LOG);
+                    SHPRINTF(buf, sz, "} ");
+                    RIGHT(LOG);
+                    break;
+                case LN:
+                    SHPRINTF(buf, sz, "\\ln ");
+                    LL(SQRT);
+                    break;
+                case E:
+                    SHPRINTF(buf, sz, "e");
                     break;
                 default:
                     SHPRINTF(buf, sz, ":/ (op)");
@@ -383,8 +433,117 @@ double eval(const Node* n, double x) {
                     return M_PI;
                 case POW:
                     return pow(EL(n), ER(n));
+                case LOG:
+                    return log(ER(n)) / log(EL(n));
+                case LN:
+                    return log(EL(n));
+                case E:
+                    return 2.7182818284590452; // TODO
             }
     }
     
     return NAN;
+}
+
+
+int _is_constant(const Node* n) {
+    if (!n) return 1;
+    
+    if (_tree_check(n)) return -1337;
+    
+    int res = 0;
+        
+    if (n->type == LIT)
+        res = 1;
+    
+    // TODO: check for errors
+    return res * _is_constant(L(n)) * _is_constant(R(n));
+}
+
+
+Node* _tree_op_lr(OPERAND op, Node* left, Node* right) {
+    Node* n = tree_op(op);
+    if (!n) return NULL;
+    
+    n->left = left;
+    n->right = right;
+    
+    return n;
+}
+
+
+Node* _tree_op_l(OPERAND op, Node* left) {
+    Node* n = tree_op(op);
+    if (!n) return NULL;
+    
+    n->left = left;
+    
+    return n;
+}
+
+
+// A little DSL
+#define _OP(op, left, right) _tree_op_lr((op), (left), (right))
+#define _OP1(op, left) _tree_op_l((op), (left))
+#define _MUL(left, right) _OP(MUL, (left), (right))
+#define _ADD(left, right) _OP(ADD, (left), (right))
+#define _SUB(left, right) _OP(SUB, (left), (right))
+#define _DIV(left, right) _OP(DIV, (left), (right))
+#define _POW(left, right) _OP(POW, (left), (right))
+#define _LN(left) _OP1(LN, (left))
+#define _SQRT(left) _OP1(SQRT, (left))
+#define _SIN(left) _OP1(SIN, (left))
+#define _COS(left) _OP1(COS, (left))
+
+#define C(n) tree_copy(n)
+
+
+Node* d(const Node* n) {
+    if (_tree_check(n)) return NULL;
+    
+    switch (n->type) {
+        case LIT:
+            return tree_lit(0);
+        case VAR:
+            return tree_lit(1);
+        case OP:
+            switch (n->op) {
+                case ADD:
+                    return _ADD(d(L(n)), d(R(n)));
+                case SUB:
+                    return _SUB(d(L(n)), d(R(n)));
+                case MUL:
+                    return _ADD(_MUL(C(L(n)), d(R(n))), _MUL(d(L(n)), C(R(n))));
+                case DIV:
+                    return _DIV(_SUB(_MUL(d(L(n)), C(R(n))), _MUL(C(L(n)), d(R(n)))), _POW(C(R(n)), tree_lit(2)));
+                case SQRT:
+                    return _MUL(_DIV(tree_lit(1), _MUL(tree_lit(2), _SQRT(C(L(n))))), d(L(n)));
+                case SIN:
+                    return _MUL(_COS(C(L(n))), d(L(n)));
+                case COS:
+                    return _MUL(_SUB(tree_lit(0), _SIN(C(L(n)))), d(L(n)));
+                case PI:
+                    return tree_lit(0);
+                case POW:
+                    if (_is_constant(L(n))) {
+                        return _MUL(_MUL(C(n), _LN(C(L(n)))), d(R(n)));
+                    } else if (_is_constant(R(n))) {
+                        return _MUL(_MUL(C(R(n)), _POW(C(L(n)), _SUB(C(R(n)), tree_lit(1)))), d(L(n)));
+                    } else {
+                        return _MUL(_POW(C(L(n)), _SUB(C(R(n)), tree_lit(1))), _ADD(_MUL(C(R(n)), d(L(n))), _MUL(_MUL(C(L(n)), _LN(C(L(n)))), d(R(n)))));
+                    }
+                case E:
+                    return tree_lit(0);
+                case LOG:
+                    if (_is_constant(L(n))) {
+                        return _MUL(_DIV(tree_lit(1), _MUL(_LN(C(L(n))), C(R(n)))), d(R(n)));
+                    } else {
+                        return _DIV(_SUB(_DIV(_MUL(_LN(C(L(n))), d(R(n))), C(R(n))), _DIV(_MUL(d(L(n)), _LN(R(n))), C(L(n)))), _POW(_LN(C(L(n))), tree_lit(2)));
+                    }
+                case LN:
+                    return _MUL(_DIV(tree_lit(1), C(L(n))), d(L(n)));
+            }
+    }
+    
+    return NULL;
 }
