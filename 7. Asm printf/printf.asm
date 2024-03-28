@@ -68,8 +68,14 @@
 %define BUF_SIZE 1024
 
 %define SYS_write 0x1
+
+section .rodata
+ALPH: db'0123456789abcdef'
+ 
+
 section .bss
 buf: resb BUF_SIZE
+bw_buf: resb BUF_SIZE
 
 section .text
 
@@ -82,6 +88,9 @@ MAprintf:
 	push r13
 	push r14
 
+	; Return value - chars written, inc by WrtTmpBuf
+	xor rax, rax
+
 	; r10 = buf_fill
 	xor r10, r10; buf_fill = 0
 	; r11 = pointer
@@ -90,13 +99,13 @@ MAprintf:
 	; r13 = arg_pointer
 	xor r13, r13
 	; r14 = next_arg
-	; r15 = str_pointer
+	; r15 = temp_arg
 
 
 .cycle:
 	call NextChar ; next_char = NextChar()
 
-	test r12, r12 ; next_char == '\0' ?
+	test r12b, r12b ; next_char == '\0' ?
 	jz .done
 
 	cmp r12b, '%' ; next_char == '%' ?
@@ -138,15 +147,42 @@ MAprintf:
 	jmp .sw_end
 
 .sw_str:
+	call NextArg
+	.s_loop: ; while (*next_arg != '\0') write *next_arg;
+		mov r12b, [r14]
+		
+		test r12b, r12b
+		jz .sw_end
+
+		call WrtTmpBuf
+
+		inc r14
+		jmp .s_loop
 
 .sw_hex:
+	call NextArg
+	mov r15, 16
+	call BaseWriter
+	jmp .sw_end
 
 .sw_octal:
+	call NextArg
+	mov r15, 8
+	call BaseWriter
+	jmp .sw_end
 
 .sw_decimal:
+	call NextArg
+	mov r15, 10 ; base = 10
+	call BaseWriter
+	jmp .sw_end
 
 .sw_binary:
-
+	call NextArg
+	mov r15, 2
+	call BaseWriter
+	jmp .sw_end
+	
 .sw_end:
 	jmp .cycle
 
@@ -193,6 +229,7 @@ FlushTmpBuf:
 WrtTmpBuf:
 	mov [buf + r10], r12b ; buf[buf_fill] = next_char
 	inc r10 ; buf_fill
+	inc rax ; return++
 
 	cmp r10, BUF_SIZE ; buf_fill < BUF_SIZE ?
 	jnz .skip
@@ -200,6 +237,8 @@ WrtTmpBuf:
 
 	.skip:
 	ret
+
+
 ; Get next_arg, increment arg_pointer
 NextArg:
 	; shifted, because of first arg being STR pointer
@@ -233,4 +272,44 @@ NextArg:
 
 .sw_end:
 	inc r13
+	ret
+
+
+; Write number r14 in base r15; destroy r14, r12
+BaseWriter:
+	push rdx
+	push rax
+
+	mov rax, r14
+	xor r14, r14
+
+	.cycle:
+		xor rdx, rdx
+		div r15 ; number/base
+
+		mov r12b, [ALPH + rdx]
+		mov [bw_buf + r14], r12b
+		
+		inc r14
+		cmp r14, BUF_SIZE
+		jz .end ; just quit
+
+		test rax, rax
+		jz .end
+
+		jmp .cycle
+
+	.end:
+
+	pop rax
+
+	.wrt_cycle:
+		dec r14
+		mov r12b, [bw_buf + r14]
+		call WrtTmpBuf
+
+		test r14, r14
+		jnz .wrt_cycle
+
+	pop rdx
 	ret
