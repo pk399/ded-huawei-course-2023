@@ -78,11 +78,20 @@ global MAprintf ; My Assembly printf
 ; rdi - STR pointer
 ; rsi, rdx, rcx, r8, r9, ... - format arguments
 MAprintf:
+	push r12 ; save required regs
+	push r13
+	push r14
+
 	; r10 = buf_fill
 	xor r10, r10; buf_fill = 0
 	; r11 = pointer
 	xor r11, r11 ; pointer = 0
 	; r12 = next_char
+	; r13 = arg_pointer
+	xor r13, r13
+	; r14 = next_arg
+	; r15 = str_pointer
+
 
 .cycle:
 	call NextChar ; next_char = NextChar()
@@ -90,12 +99,64 @@ MAprintf:
 	test r12, r12 ; next_char == '\0' ?
 	jz .done
 
+	cmp r12b, '%' ; next_char == '%' ?
+	jz .phandler
+
 	call WrtTmpBuf
 
 	jmp .cycle
 
+.phandler:
+	call NextChar
+
+	; switch (next_char)
+	cmp r12b, '%'
+	jz .sw_percent
+	cmp r12b, 'c'
+	jz .sw_char
+	cmp r12b, 's'
+	jz .sw_str
+	cmp r12b, 'x'
+	jz .sw_hex
+	cmp r12b, 'o'
+	jz .sw_octal
+	cmp r12b, 'd'
+	jz .sw_decimal
+	cmp r12b, 'b'
+	jz .sw_binary
+	; Default (quit)
+	jmp .done
+
+.sw_percent:
+	call WrtTmpBuf ; write '%'
+	jmp .sw_end
+
+.sw_char:
+	call NextArg
+	mov r12b, r14b
+	call WrtTmpBuf
+	jmp .sw_end
+
+.sw_str:
+
+.sw_hex:
+
+.sw_octal:
+
+.sw_decimal:
+
+.sw_binary:
+
+.sw_end:
+	jmp .cycle
+
 .done:
 	call FlushTmpBuf
+
+	pop r14
+	pop r13
+	pop r12
+
 	ret
 
 
@@ -138,4 +199,38 @@ WrtTmpBuf:
 	call FlushTmpBuf
 
 	.skip:
+	ret
+; Get next_arg, increment arg_pointer
+NextArg:
+	; shifted, because of first arg being STR pointer
+	cmp r13, 5 ; arg_pointer < 5 ?
+	jg .sw_stack
+	
+	xor r15, r15
+	mov r15, r13
+	shl r15, 2
+	add r15, r13
+	add r15, .sw
+	jmp r15 ; jump to: .sw + arg_pointer*5
+
+.sw:
+	mov r14, rsi
+	jmp .sw_end
+	mov r14, rdx
+	jmp .sw_end
+	mov r14, rcx
+	jmp .sw_end
+	mov r14, r8
+	jmp .sw_end
+	mov r14, r9
+	jmp .sw_end
+
+.sw_stack:
+	mov r15, r13
+	sub r15, 5 ; arg_pointer - 5
+	mov r14, [rsp + 8*r15 + (5 * 8)] ; skip RETADDR R14 R13 R12 RETADD -> stack args
+
+
+.sw_end:
+	inc r13
 	ret
