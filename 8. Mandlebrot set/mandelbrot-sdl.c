@@ -55,13 +55,12 @@ int main() {
 	double origin_x = -0.5;
 	double origin_y = 0;
 
-	SDL_Surface* surf_big = SDL_CreateRGBSurface(0,10000,10000,32,0,0,0,0);
-	scale = 3.0 / 10000.0;
-	draw_mandelbrot(surf_big, scale, origin_x, origin_y);
-	SDL_SaveBMP(surf_big, "Mandelbrot.bmp");
-	SDL_FreeSurface(surf_big);
-
-	goto QUIT;
+	//SDL_Surface* surf_big = SDL_CreateRGBSurface(0,10000,10000,32,0,0,0,0);
+	//scale = 3.0 / 10000.0;
+	//draw_mandelbrot(surf_big, scale, origin_x, origin_y);
+	//SDL_SaveBMP(surf_big, "Mandelbrot.bmp");
+	//SDL_FreeSurface(surf_big);
+	//goto QUIT;
 
 	while (1) {
 		SDL_Surface* surf = SDL_GetWindowSurface(win);
