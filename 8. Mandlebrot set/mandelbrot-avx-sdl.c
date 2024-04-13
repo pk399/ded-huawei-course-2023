@@ -19,7 +19,7 @@ typedef union {
 
 void draw_mandelbrot(SDL_Surface* surf, double scale, double ox, double oy) {
 	Uint32* pixbuf = surf->pixels;
-	for (int xi = 0; xi < surf->w; xi += 4) {
+	for (int xi = 0; xi < surf->w - 3; xi += 4) {
 		for (int yi = 0; yi < surf->h; yi++) {
 			avx_t x, y, x0, y0;
 			x0.m256d = _mm256_set_pd(CX(xi + 3), CX(xi + 2), CX(xi + 1), CX(xi));
