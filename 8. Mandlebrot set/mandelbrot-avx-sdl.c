@@ -71,7 +71,7 @@ int main() {
 		return 1;
 	}
 
-	SDL_Window* win = SDL_CreateWindow("Mandelbrot set (No optimizations)", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	SDL_Window* win = SDL_CreateWindow("Mandelbrot set (AVX)", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (win == NULL) {
 		printf("Failed to create window\n");
 		return 1;
