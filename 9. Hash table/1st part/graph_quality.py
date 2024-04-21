@@ -5,8 +5,8 @@ import subprocess
 from pathlib import Path
 
 CC = 'g++'
-CFLAGS = ['-O3', '-I../common/include']
-INFILES = ['test-ht-q.c', 'strlist.c', 'hash.c']
+CFLAGS = ['-O3', '-I../../common/include']
+INFILES = ['test-ht.c', 'strlist.c', 'hash.c']
 EXN = 'tst'
 
 IMGDIR = Path('pics')
