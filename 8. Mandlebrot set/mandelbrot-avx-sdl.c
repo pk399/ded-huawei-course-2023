@@ -12,50 +12,40 @@ const double R2 = 10.0*10.0;
 #define CX(x) (x - surf->w/2) * scale + ox
 #define CY(y) (surf->h/2 - y) * scale + oy
 
-typedef union {
-	__m256d m256d;
-	double d[4];
-} avx_t;
-
 void draw_mandelbrot(SDL_Surface* surf, double scale, double ox, double oy) {
 	Uint32* pixbuf = surf->pixels;
 	for (int xi = 0; xi < surf->w - 3; xi += 4) {
 		for (int yi = 0; yi < surf->h; yi++) {
-			avx_t x, y, x0, y0;
-			x0.m256d = _mm256_set_pd(CX(xi + 3), CX(xi + 2), CX(xi + 1), CX(xi));
-			y0.m256d = _mm256_set1_pd(CY(yi));
+			__m256d x, y, x0, y0;
+			x0 = _mm256_set_pd(CX(xi + 3), CX(xi + 2), CX(xi + 1), CX(xi));
+			y0 = _mm256_set1_pd(CY(yi));
 			x = x0;
 			y = y0;
-	//		printf("(%lf, %lf) ", xn_1, yn_1);
 
-			avx_t two, r2;
-			two.m256d = _mm256_set1_pd(2.0);
-			r2.m256d = _mm256_set1_pd(R2);
+			__m256d one, two, r2;
+			one = _mm256_set1_pd(1.0);
+			two = _mm256_set1_pd(2.0);
+			r2 = _mm256_set1_pd(R2);
 
-			//int n = 0;
-			avx_t n, mask, one;
-			n.m256d = _mm256_setzero_pd();
-			mask.m256d = _mm256_set1_pd(1337.0);
-			one.m256d = _mm256_set1_pd(1.0);
-			while ( (mask.d[0] || mask.d[1] || mask.d[2] || mask.d[3]) && (n.d[0] < 256.0 && n.d[1] < 256.0 && n.d[2] < 256.0 && n.d[3] < 256.0)) {
-				avx_t x2, xy, y2;
-				x2.m256d = _mm256_mul_pd(x.m256d, x.m256d);
-				xy.m256d = _mm256_mul_pd(x.m256d, y.m256d);
-				y2.m256d = _mm256_mul_pd(y.m256d, y.m256d);
+			__m256d n, mask;
+			n = _mm256_setzero_pd();
+			mask = _mm256_set1_pd(1337.0); // a non-zero number
+			for ( int i = 0; i < MAXLOOP && !_mm256_testz_si256(_mm256_castpd_si256(mask), _mm256_castpd_si256(mask)); i++ ) {
+				__m256d x2, xy, y2;
+				x2 = _mm256_mul_pd(x, x);
+				xy = _mm256_mul_pd(x, y);
+				y2 = _mm256_mul_pd(y, y);
 
-				mask.m256d = _mm256_cmp_pd(_mm256_add_pd(x2.m256d, y2.m256d), r2.m256d, 1);
-				n.m256d = _mm256_add_pd(_mm256_and_pd(mask.m256d, one.m256d), n.m256d);
+				mask = _mm256_cmp_pd(_mm256_add_pd(x2, y2), r2, 1);
+				n = _mm256_add_pd(_mm256_and_pd(mask, one), n);
 
-				x.m256d = _mm256_sub_pd(_mm256_add_pd(x2.m256d, x0.m256d), y2.m256d);
-				y.m256d = _mm256_add_pd(_mm256_mul_pd(two.m256d, xy.m256d), y0.m256d);
-				//double xn = xn_1*xn_1 - yn_1*yn_1 + x0;
-				//double yn = 2*xn_1*yn_1 + y0;
-
-				//if (x.d[0]*x.d[0] + y.d[0]*y.d[0] > R2) break;
+				x = _mm256_sub_pd(_mm256_add_pd(x2, x0), y2);
+				y = _mm256_add_pd(_mm256_mul_pd(two, xy), y0);
 			}
 
+			double* nd = (double*) &n;
 			for (int i = 0; i < 4; i++) {
-				int ni = n.d[i];
+				unsigned ni = nd[i];
 				if (ni == MAXLOOP)
 					pixbuf[surf->w*yi + xi + i] = SDL_MapRGBA(surf->format, 0, 0, 0, 255);
 				else

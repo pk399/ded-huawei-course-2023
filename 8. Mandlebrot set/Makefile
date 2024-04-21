@@ -2,6 +2,8 @@ CFLAGS = -O3 -mavx -lSDL2
 
 all: avx no-avx
 	echo 123
+run-avx: avx
+	./mandelbrot-avx
 
 clean:
 	rm mandelbrot-avx mandelbrot
