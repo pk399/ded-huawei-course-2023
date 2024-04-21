@@ -8,8 +8,8 @@ const int HEIGHT = 720;
 
 const double R2 = 10.0*10.0;
 
-#define CX(x) (x - surf->w/2) * scale + ox
-#define CY(y) (surf->h/2 - y) * scale + oy
+#define CX(x) ((x - WIDTH/2) * scale + ox)
+#define CY(y) ((HEIGHT/2 - y) * scale + oy)
 
 void draw_mandelbrot(SDL_Surface* surf, double scale, double ox, double oy) {
 	Uint32* pixbuf = surf->pixels;
@@ -77,7 +77,13 @@ int main() {
 			switch (event.type) {
 				case SDL_MOUSEWHEEL:
 					//printf("scale: %lf, wheel: %f\n", scale, event.wheel.preciseY);
+					double old_scale = scale;
+
 					scale += -1 * event.wheel.preciseY * (SCROLL_POW/100.0) * scale;
+
+					origin_x -= (scale - old_scale)*(event.wheel.mouseX - WIDTH/2);
+					origin_y += (scale - old_scale)*(event.wheel.mouseY - HEIGHT/2);
+
 					break;
 				case SDL_MOUSEMOTION:
 					if (event.motion.state & SDL_BUTTON_LMASK) {
