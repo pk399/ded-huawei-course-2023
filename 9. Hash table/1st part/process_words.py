@@ -1,6 +1,6 @@
 import lzma
 
-with lzma.open('War and Peace.txt.xz', 'rt') as f:
+with lzma.open('../War and Peace.txt.xz', 'rt') as f:
     d = f.read()
 
 t = d[7450:-18410] # Remove not war and peace
