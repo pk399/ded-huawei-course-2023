@@ -1,4 +1,4 @@
-CFLAGS = -O3 -mavx -lSDL2
+CFLAGS = -O3 -mavx -lSDL2 -lSDL2_ttf -I../common/include
 
 all: avx no-avx
 	echo 123
