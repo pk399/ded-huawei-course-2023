@@ -6,11 +6,11 @@ import sys
 import numpy as np
 
 CC = 'g++'
-CFLAGS = ['-I../../common/include']
+CFLAGS = ['-I../../common/include', '-g']
 EXN = 'tst'
 
-RUN_TESTS = 5
-WORDS_SIZE = 3333
+RUN_TESTS = 100
+WORDS_SIZE = 13333
 words = get_words()
 shuffle(words)
 words = words[:WORDS_SIZE]
@@ -18,7 +18,9 @@ words = words[:WORDS_SIZE]
 CONTESTANTS = {'baseline0': (('-O0',), ('test-ht.c', 'strlist.c', 'hash.c')),
                'baseline1': (('-O3',), ('test-ht.c', 'strlist1.c', 'hash1.c')),
                'opt1': (('-O3', '-mavx'), ('test-ht2.c', 'strlist2.c', 'hash2.c')),
-               'opt2': (('-O3', '-mavx'), ('test-ht3.c', 'strlist2.c', 'hash3.c', 'hf.o'))}
+               'opt2': (('-O3', '-mavx'), ('test-ht3.c', 'strlist2.c', 'hash3.c', 'hf.o')),
+               'opt2.1': (('-O3', '-mavx'), ('test-ht4.c', 'strlist3.c', 'hash4.c', 'hf.o')),
+               'opt3': (('-O3', '-mavx'), ('test-ht4.c', 'strlist3.c', 'hash5.c', 'hf.o'))}
 REF = 'baseline1'
 
 results = {}
@@ -31,8 +33,9 @@ for tn, test in CONTESTANTS.items():
         print(res.stdout.decode())
         sys.exit(1)
 
-    if True and tn == 'opt2':
+    if False and tn == 'opt3':
         subprocess.run(['valgrind', '--tool=callgrind', '--branch-sim=yes', '--cache-sim=yes',
+                        '--dump-instr=yes', '--collect-jumps=yes',
                         f'./{EXN}', str(len(words)), *[x + '\n' for x in words]])
         sys.exit()
  
