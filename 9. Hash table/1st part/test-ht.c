@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <nmmintrin.h>
 
 #include "hash.h"
 
@@ -77,7 +78,23 @@ uint64_t hf(const char* s) {
 }
 #endif /* F7 */
 
+#ifdef F8
+uint64_t hf(const char* s) {
+	uint64_t h = 0;
+	
+	size_t len = strlen(s);
 
+	for (uint64_t* c = (uint64_t*) s; (char*) c < s + len - 3; c++) {
+		h = _mm_crc32_u64(h, *c);
+	}
+
+	for (char* c = (char*) s; c < s + len; c++) {
+		h = _mm_crc32_u64(h, *c);
+	}
+
+	return h;
+}
+#endif /* F8*/
 
 
 int main() {
