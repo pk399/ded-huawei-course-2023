@@ -1,0 +1,191 @@
+;========================
+;Draws a frame with shadow, saving registers
+;Entry:
+;   AH - x coord
+;   AL - y coord
+;   DH - width
+;   DL - height
+;   CH - color
+;   CL - shadow color
+;   BL - style (0 - 4)
+;Destroy:
+;   -
+;========================
+DrawFrameShadowSave       proc
+    push ax bx cx dx di
+
+    call DrawFrameShadow
+
+    pop di dx cx bx ax
+    
+    ret
+        endp
+
+;========================
+;Draws a frame with shadow
+;Entry:
+;   AH - x coord
+;   AL - y coord
+;   DH - width
+;   DL - height
+;   CH - color
+;   CL - shadow color
+;   BL - style (0 - 4)
+;Destroy:
+;   AX, BX, CX, DX, DI
+;========================
+DrawFrameShadow       proc
+    push ax bx cx dx
+
+    mov ch, cl
+    add ah, 1
+    add al, 1
+    mov bx, 0
+    call DrawFrame
+
+    pop dx cx bx ax
+    
+    call DrawFrame
+    
+    ret
+        endp
+
+
+;========================
+;Draws a frame (no shadow)
+;Entry:
+;   AH - x coord
+;   AL - y coord
+;   DH - width
+;   DL - height
+;   CH - color
+;   BL - style (0 - 4)
+;Destroy:
+;   AX, BX, CX, DX, DI
+;========================
+DrawFrame       proc
+    push bx ; save
+    mov bl, ah
+    xor ah, ah
+    call Coord2Offs ; coords -> AX
+    mov di, ax
+
+    pop bx ; recover
+    call StyleAddr
+
+    mov ah, ch ; color  
+
+    xor cx, cx
+    mov cl, dh
+    xor dh, dh
+
+    sub dx, 2 ; height - 2
+
+    call DrawRowStyle
+    add bx, 3 ; new chars
+    add di, 160
+
+    
+    DrawFrameLoop:
+        call DrawRowStyle        
+        
+        add di, 160
+        sub dl, 1
+        jne DrawFrameLoop
+    
+    add bx, 3 ; new chars
+    call DrawRowStyle
+
+    ret
+        endp
+
+
+;========================
+;Gets style address
+;Entry:
+;   BL - style (0-4)
+;Result:
+;   BX - address
+;Destroy:
+;   AX
+;========================
+StyleAddr       proc
+    xor ax, ax
+    xor bh, bh
+
+    mov al, bl
+    shl bx, 3
+    add bx, ax
+    add bx, offset Style
+    ret
+        endp
+
+
+;========================
+;Coords BL, AL -> offset AX
+;Entry:
+;   BL - x coord
+;   AL - y coord
+;Returns:
+;   AX - offset in video mem  
+;Destroy:
+;   BX
+;========================
+Coord2Offs       proc
+    mov bh, 80d
+    mul bh ; AX = AL * 80
+    xor bh, bh
+    add ax, bx
+    shl ax, 1
+
+    ret
+        endp
+
+;========================
+;Writes a ramka row
+;Entry:
+;	AH - color
+;   DI - offset on screen
+;	CX - lenght (>2)
+;   BX - style (address, 3 chars)
+;Expect:
+;	ES = 0b800h
+;Destroy:
+;   AL
+;========================
+DrawRowStyle		proc
+	sub cx, 2
+
+    push di
+    
+    mov al, byte ptr [bx]
+	STOSW
+    
+    push cx
+    add bx, 1
+	mov al, byte ptr [bx]
+	rep STOSW
+    pop cx
+    add bx, 1
+    mov al, byte ptr [bx]
+	STOSW
+    
+    pop di
+
+    ; revert
+    add cx, 2
+    sub bx, 2
+
+	ret
+		endp
+
+
+;========================
+; STYLES
+;========================
+Style:
+    db '         ' ; EMPTY - used for shadow
+    db '+-+| |+-+' ; BASIC
+    db '/-\| |\-/' ; CURVY - good lookin
+    db '!^!! !!v!' ; BOXY - fine ascii art da c4 bf b3 sp b3 c0 c4 d9
+    db '1231 3123' ; BOLD - for important messages c9 cd bb ba sp ba c8 cd bc

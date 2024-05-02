@@ -1,0 +1,50 @@
+;!!!expects rmkinc!!!
+
+;====================
+;Writes reg into ramka
+;Expect:
+;	VideoMem in ES
+;Entry:
+;	BL - x
+;	AL - y
+;   CX - name
+;	DX - value
+;Destroy:
+;   AX, BX, DX
+;=====================
+WriteReg    proc
+        call Coord2Offs
+                
+        push di
+        push si
+        mov di, ax
+        xor si, si
+
+        mov es:[di], cl
+        add di, 1 * 2
+        mov es:[di], ch
+
+        add di, 2 * 2
+
+        mov si, 4
+HexLoop:
+        mov bx, dx
+        shr bx, 12
+    
+        mov ah, byte ptr [bx + offset icanbrif]
+        mov byte ptr es:[di], ah
+        
+        shl dx, 4
+        add di, 1 * 2
+
+        sub si, 1
+        jne HexLoop
+
+
+        pop si
+        pop di
+    
+        ret
+        endp
+
+icanbrif: db '0123456789abcdef'
