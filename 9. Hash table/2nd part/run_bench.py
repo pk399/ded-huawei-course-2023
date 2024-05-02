@@ -33,11 +33,11 @@ for tn, test in CONTESTANTS.items():
         print(res.stdout.decode())
         sys.exit(1)
 
-    if False and tn == 'opt3':
+    if 1: #False and tn == 'opt3':
         subprocess.run(['valgrind', '--tool=callgrind', '--branch-sim=yes', '--cache-sim=yes',
                         '--dump-instr=yes', '--collect-jumps=yes',
                         f'./{EXN}', str(len(words)), *[x + '\n' for x in words]])
-        sys.exit()
+        #sys.exit()
  
 
     times = []

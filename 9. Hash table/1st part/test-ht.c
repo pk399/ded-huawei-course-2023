@@ -5,6 +5,10 @@
 
 #include "hash.h"
 
+#ifndef HT_SIZE
+#define HT_SIZE 1733
+#endif /* HT_SIZE */
+
 #ifdef F1
 uint64_t hf(const char* s) {
 	return 1;
@@ -98,7 +102,7 @@ uint64_t hf(const char* s) {
 
 
 int main() {
-	HT* ht = HTCtor(1733, &hf);
+	HT* ht = HTCtor(HT_SIZE, &hf);
 	fprintf(stderr, "Created: %p\n", ht);
 
 	HTInsert(ht, "aboa");

@@ -131,22 +131,40 @@ int HTLookUp(const HT* ht, const char* s) {
 	: "r" (tmp_buf), "m" (s), "i" (ELEM_SIZE)
 	: "%bx", "%rdx");*/
 
+	memset(tmp_buf, 0, ELEM_SIZE);
 	asm (
 	"xor %%rdx, %%rdx\n\t"
 	"loop:\n\t"
 	"movb (%0, %%rdx, 1), %%bl\n\t"
-	"movb %%bl, (%1, %%rdx, 1)\n\t"
-	"inc %%rdx\n\t"
 	"test %%bl, %%bl\n\t"
 	"jz end\n\t"
 	"cmp %2, %%rdx\n\t"
 	"jz end\n\t"
+	"movb %%bl, (%1, %%rdx, 1)\n\t"
+	"inc %%rdx\n\t"
 	"jmp loop\n\t"
 
 	"end:"
 	:
-	: "r" (s), "r" (tmp_buf), "i" (ELEM_SIZE)
-	: "%rdx", "bl");
+	: "r" (s), "r" (tmp_buf), "i" (ELEM_SIZE - 2)
+	: "%rdx", "%bl");
+	/*//memcpy(tmp_buf, s, ELEM_SIZE);
+	__m256i tmem = _mm256_lddqu_si256((__m256i*) s);
+	_mm256_store_si256((__m256i*) tmp_buf, tmem);
+	//v trim after zero
+	asm (
+	"mov $32, %%rdx\n\t"
+	"loop1:\n\t"
+	"movb (%0, %%rdx, 1), %%bl\n\t"
+	"movb $0, (%0, %%rdx, 1)\n\t"
+	"dec %%rdx\n\t"
+	"cmp $10, %%bl\n\t" //newline
+	"jnz loop1\n\t"
+	:
+	: "r" (tmp_buf), "i" (ELEM_SIZE - 1)
+	: "%rdx", "%bl");
+//strncpy(tmp_buf, s, ELEM_SIZE);
+*/
 
 	int idx = ht->func(tmp_buf) % ht->capacity;
 	List* l = ht->data[idx];
@@ -155,9 +173,9 @@ int HTLookUp(const HT* ht, const char* s) {
 	for (int i = 0; i < l->size; i++) {
 		//printf("\t Searched: |%s|\n", l->data[i]);
 		__m256d msn = _mm256_load_pd((const double*) l->data[i]);
-		__m256i mxor = _mm256_castpd_si256(_mm256_xor_pd(ms, msn));
+		__m256i mxor = (__m256i) _mm256_xor_pd(ms, msn);
 		int res = _mm256_testz_si256(mxor, mxor);
-
+		
 		if (res) {
 			return 0;
 		}
